@@ -51,7 +51,7 @@ pub struct RuntimePresentationScreen {
     scene: RuntimePresentationScene,
     console_tint: PaletteRemapTable,
     scene_frame_presented_output: Option<bool>,
-    scene_completion_output: bool,
+    scene_vm_execution_output: Option<bool>,
     completed_sequence_lists: u64,
     caption: RetainedSequenceCaption,
     channel: RgbaUiOverlay,
@@ -83,7 +83,7 @@ impl RuntimePresentationScreen {
             scene: RuntimePresentationScene::new(initial_palette),
             console_tint,
             scene_frame_presented_output: None,
-            scene_completion_output: false,
+            scene_vm_execution_output: None,
             completed_sequence_lists: 0,
             caption: RetainedSequenceCaption::new(),
             channel: RgbaUiOverlay::new(
@@ -107,8 +107,8 @@ impl RuntimePresentationScreen {
         &mut self.state
     }
 
-    pub(super) fn take_scene_completion_output(&mut self) -> bool {
-        std::mem::take(&mut self.scene_completion_output)
+    pub(super) fn take_scene_vm_execution_output(&mut self) -> Option<bool> {
+        self.scene_vm_execution_output.take()
     }
 
     /// Borrow the underlying general presentation-scene dispatcher state.
@@ -303,7 +303,7 @@ impl RuntimePresentationScreen {
             active_record_related,
             scruter_jo_record,
             scene_frame_presented_output: &mut self.scene_frame_presented_output,
-            scene_completion_output: &mut self.scene_completion_output,
+            scene_vm_execution_output: &mut self.scene_vm_execution_output,
             secondary_presentation_mode,
             deferred_error: None,
             caption: &mut self.caption,
@@ -393,7 +393,7 @@ struct RuntimePresentationScreenBackend<'services, 'window> {
     active_record_related: Option<ScriptObjectId>,
     scruter_jo_record: Option<ScriptObjectId>,
     scene_frame_presented_output: &'services mut Option<bool>,
-    scene_completion_output: &'services mut bool,
+    scene_vm_execution_output: &'services mut Option<bool>,
     secondary_presentation_mode: bool,
     deferred_error: Option<anyhow::Error>,
     caption: &'services mut RetainedSequenceCaption,
@@ -601,8 +601,9 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
             false,
             self.secondary_presentation_mode,
         )?;
-        *self.scene_completion_output |=
-            outcome == PresentationSceneDispatchOutcome::PresentationFinished;
+        if let Some(enabled) = outcome.vm_execution_write(self.scene_state.present_policy) {
+            *self.scene_vm_execution_output = Some(enabled);
+        }
         *self.scene_frame_presented_output = Some(self.scene_state.frame_presented);
         Ok(PresentationSceneStatus {
             queued: self.scene_state.presentation.active_line.is_some()
@@ -656,7 +657,7 @@ impl PresentationScreenBackend for RuntimePresentationScreenBackend<'_, '_> {
         self.channel.clear();
         if release_scene_presentation(self.scene_state) {
             self.services.finish_presentation_sequence();
-            *self.scene_completion_output = true;
+            *self.scene_vm_execution_output = Some(true);
         }
     }
 

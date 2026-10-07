@@ -325,19 +325,25 @@ fn synchronize_selected_ship_target(
     ship.active_line = SHIP_NAVIGATION_STATUS_LINE;
 }
 
-pub(super) fn publish_sequel_scene_completion(
+pub(super) fn publish_sequel_scene_execution(
     sequel: bool,
-    completed: bool,
+    write: Option<bool>,
     lifecycle: &mut GameLifecycleState,
 ) {
-    if sequel && completed {
+    if !sequel {
+        return;
+    }
+    let Some(enabled) = write else {
+        return;
+    };
+    if enabled {
         lifecycle
             .presentation
             .request_flags
             .clear_secondary_request();
         lifecycle.presentation.c2_presentation_gate = false;
-        lifecycle.vm_execution_enabled = true;
     }
+    lifecycle.vm_execution_enabled = enabled;
 }
 
 fn publish_presentation_screen_modal_ui(
@@ -2997,7 +3003,7 @@ impl<'window> ModernGameServices<'window> {
             .presentation_screen
             .as_mut()
             .context("presentation screen is already being updated")?;
-        let scene_completed = screen.take_scene_completion_output();
+        let scene_vm_write = screen.take_scene_vm_execution_output();
         screen.publish_scene_queue_metrics(state);
         let screen = screen.state_mut();
         let screen_rebuild_pending = screen.take_screen_rebuild_pending();
@@ -3015,7 +3021,11 @@ impl<'window> ModernGameServices<'window> {
         if startup_mode_completed {
             state.presentation_mode = false;
         }
-        self.resume_vm_after_scene(state, scene_completed);
+        publish_sequel_scene_execution(
+            self.sequel_presentation_control().is_some(),
+            scene_vm_write,
+            state,
+        );
         Ok(())
     }
 
@@ -3025,9 +3035,9 @@ impl<'window> ModernGameServices<'window> {
         lifecycle: &mut GameLifecycleState,
         completed: bool,
     ) {
-        publish_sequel_scene_completion(
+        publish_sequel_scene_execution(
             self.sequel_presentation_control().is_some(),
-            completed,
+            completed.then_some(true),
             lifecycle,
         );
     }
@@ -3266,13 +3276,15 @@ impl<'window> ModernGameServices<'window> {
         }
         self.ship_presentation = ship;
         screen.publish_scene_queue_metrics(lifecycle);
+        let vm_write = outcome
+            .as_ref()
+            .ok()
+            .and_then(|outcome| outcome.vm_execution_write(screen.scene_state().present_policy));
         self.presentation_screen = Some(screen);
-        self.resume_vm_after_scene(
+        publish_sequel_scene_execution(
+            self.sequel_presentation_control().is_some(),
+            vm_write,
             lifecycle,
-            matches!(
-                &outcome,
-                Ok(PresentationSceneDispatchOutcome::PresentationFinished)
-            ),
         );
         outcome
     }
@@ -3332,13 +3344,15 @@ impl<'window> ModernGameServices<'window> {
         {
             self.script_finale_shutdown_pending = true;
         }
+        let vm_write = outcome
+            .as_ref()
+            .ok()
+            .and_then(|outcome| outcome.vm_execution_write(screen.scene_state().present_policy));
         self.presentation_screen = Some(screen);
-        self.resume_vm_after_scene(
+        publish_sequel_scene_execution(
+            self.sequel_presentation_control().is_some(),
+            vm_write,
             lifecycle,
-            matches!(
-                &outcome,
-                Ok(PresentationSceneDispatchOutcome::PresentationFinished)
-            ),
         );
         outcome
     }
@@ -3798,7 +3812,7 @@ impl<'window> ModernGameServices<'window> {
             .presentation_screen
             .as_mut()
             .context("presentation screen is already being updated")?;
-        screen.take_scene_completion_output();
+        screen.take_scene_vm_execution_output();
         screen.state_mut().set_active(false);
         self.presentation_word_choice
             .as_mut()
@@ -6951,6 +6965,54 @@ mod tests {
             assert_eq!(text.dialogue_hold_countdown, 0);
             assert_eq!(text.subtitle_reveal_cursor, None);
         }
+    }
+
+    #[test]
+    #[ignore = "requires original BBB assets and serialized SDL/wgpu ownership"]
+    fn sequel_blocking_scene_start_pauses_vm() {
+        let _gpu = crate::gpu_test::lock();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../output/big-bug-bang/imported-assets");
+        let sdl = sdl3::init().unwrap();
+        let video = sdl.video().unwrap();
+        let window = video
+            .window("BBB scene start regression", 640, 480)
+            .hidden()
+            .build()
+            .unwrap();
+        let writable = TemporaryRoot::create();
+        let data = OriginalGameData::load_with_writable_root(
+            OriginalGameDataPaths::from_root(root).unwrap(),
+            &writable.0,
+        )
+        .unwrap();
+        let mut services = ModernGameServices::new(&window, data, TEST_SCRIPT_CLOCK).unwrap();
+        services.prepare_startup_resources().unwrap();
+        services
+            .load_script_profile(ScriptProfileId::INITIAL)
+            .unwrap();
+        services
+            .load_script_profile(ScriptProfileId::new(1).unwrap())
+            .unwrap();
+        services.apply_presentation_description(b"present").unwrap();
+        services
+            .select_descript_sequence_video(b"PE\\GLUXROUG.HNM")
+            .unwrap();
+        services.ship_presentation.active_line = 2;
+        let mut lifecycle = GameLifecycleState::default();
+        lifecycle.vm_execution_enabled = true;
+        let outcome = services
+            .dispatch_ship_scene(GameSceneLink::Initial, &mut lifecycle)
+            .unwrap();
+        assert!(matches!(
+            outcome,
+            PresentationSceneDispatchOutcome::SequenceStarted { .. }
+        ));
+        assert!(services.presentation_stream_active());
+        assert!(
+            !lifecycle.vm_execution_enabled,
+            "original B4B0 line two writes VM disabled when starting its back-buffer scene"
+        );
     }
 
     #[test]

@@ -241,6 +241,23 @@ pub enum PresentationSceneDispatchOutcome {
     },
 }
 
+impl PresentationSceneDispatchOutcome {
+    /// BBB's VM-enable write; other dispatch paths preserve the current value.
+    pub fn vm_execution_write(self, policy: PresentationPresentPolicy) -> Option<bool> {
+        match self {
+            Self::PresentationFinished => Some(true),
+            Self::SequenceStarted { .. }
+                if policy.draw_via_back_buffer
+                    || policy.skip_back_buffer_present
+                    || policy.unclamped_rows =>
+            {
+                Some(false)
+            }
+            _ => None,
+        }
+    }
+}
+
 /// Invalid authored data or host operation encountered by scene dispatch.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PresentationSceneDispatchError<HostError> {
@@ -573,6 +590,7 @@ mod tests {
         depth_opening: u8,
         depth_step: u8,
         vertical_offset: u16,
+        vm_enabled: u8,
     }
 
     impl BigBugBangDispatchResult {
@@ -733,8 +751,9 @@ mod tests {
         ))
         .unwrap();
         assert_eq!(vectors.len(), ORACLE_VECTOR_COUNT);
+        let sequel = sequel_vectors();
 
-        for vector in vectors {
+        for (vector, sequel) in vectors.iter().zip(&sequel) {
             let mut scenes = vec![PresentationSceneDescriptor { image: None }; 64];
             let image = match vector.name.as_str() {
                 "missing_image_clears_back_buffer_band" => None,
@@ -837,7 +856,17 @@ mod tests {
                 read_wrap_index: state.read_wrap_index,
             };
 
-            dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
+            let outcome = dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
+            assert_eq!(vector.name, sequel.name);
+            assert_eq!(
+                outcome
+                    .vm_execution_write(state.present_policy)
+                    .map(u8::from)
+                    .unwrap_or(0xA6),
+                sequel.result.vm_enabled,
+                "{} VM write",
+                vector.name
+            );
 
             assert_eq!(host.events, expected_events(&vector), "{}", vector.name);
             assert_eq!(
@@ -939,18 +968,22 @@ mod tests {
         }
     }
 
+    fn sequel_vectors() -> Vec<BigBugBangDispatchOracle> {
+        include_str!(
+            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_scene_dispatch.jsonl"
+        )
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
+    }
+
     #[test]
     fn sequel_scene_dispatch_matches_original_resource_policy_branch() {
         let commander: Vec<DispatchOracle> = serde_json::from_str(include_str!(
             "../../../../../re/tools/oracle_vectors/func_9d10_natural.json"
         ))
         .unwrap();
-        let sequel: Vec<BigBugBangDispatchOracle> = include_str!(
-            "../../../../../re/tools/oracle_vectors/big_bug_bang_presentation_scene_dispatch.jsonl"
-        )
-        .lines()
-        .map(|line| serde_json::from_str(line).unwrap())
-        .collect();
+        let sequel = sequel_vectors();
         assert_eq!(sequel.len(), ORACLE_VECTOR_COUNT + 2);
 
         for (commander, sequel) in commander.iter().zip(&sequel) {
@@ -1003,7 +1036,16 @@ mod tests {
                 read_wrap_index: u16::MIN,
             };
 
-            dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
+            let outcome = dispatch_presentation_scene(&mut state, &mut context, &mut host).unwrap();
+            assert_eq!(
+                outcome
+                    .vm_execution_write(state.present_policy)
+                    .map(u8::from)
+                    .unwrap_or(0xA6),
+                vector.result.vm_enabled,
+                "{} VM write",
+                vector.name
+            );
 
             assert_eq!(
                 host.events,

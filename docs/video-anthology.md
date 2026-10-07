@@ -1039,6 +1039,29 @@ it is not an accepted flow or predecessor. The DOS result is an original
 scene check after loading an earned native save, not a complete original
 playthrough.
 
+An independent scene-start defect is now repaired: the BBB dispatcher at
+original `0xB4B0` disables the VM when a new scene uses back-buffer drawing,
+skipped back-buffer presentation, or one of its first eight unclamped modes.
+The native scene paths previously propagated completion's enable write only.
+Ship, contact, and panel paths now propagate explicit one-shot pause/resume
+writes; a pause preserves request ownership, and unrelated dispatch paths do
+not change the VM. Ordinary idle line 8 is not assigned a new pause policy.
+The real-asset line-2 regression failed before this change and passes after it.
+A fresh execution of all 13 original dispatcher cases matches the checked-in
+vectors byte-for-byte, and their previously untested `vm_enabled` fields are
+now asserted alongside the existing 38 completion/cancellation vectors.
+All 1,124 enabled library tests and 42 asset-dependent sequel tests pass.
+
+`output/diagnostics/scene-start-vm-v1/control-review.json` additionally checks
+the fixed normal-input controls and 81 lineage manifests. Both pre-repair and
+repaired Papy payment runs still make 53 deductions in 6,336 frames. The
+repair therefore does not explain the original's 17-deduction result. The
+repaired refusal preserves five credits and all six required sites; Metagluk's
+wrong-syllable control preserves two credits and all 27 sites. Their saved
+bytes match the earlier accepted witnesses. All four close to witnessed saves,
+with frozen input, source, recorder, and binary hashes.
+The payment controls remain diagnostics outside normal-route coverage.
+
 Three Papy GIVE alternatives continue independently from the earned
 `bbb-gluxx-resupply-v1` save. Their actual menus offer the carried items;
 none uses a forced transfer or the strike-payment checkpoint:

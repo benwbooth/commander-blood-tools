@@ -6,7 +6,7 @@ use crate::native::bloodprg::{
     PresentationSceneDispatchContext, PresentationSceneDispatchHost, PresentationSceneQueueService,
     PresentationSceneSource, dispatch_presentation_scene,
 };
-use crate::runtime::services::publish_sequel_scene_completion;
+use crate::runtime::services::publish_sequel_scene_execution;
 use serde::Deserialize;
 use std::ops::Range;
 
@@ -182,7 +182,7 @@ fn sequel_scene_completion_matches_original_latches_and_vm_writes() {
         lifecycle.presentation.request_flags =
             crate::native::bloodprg::PresentationRequestFlags::decode(vector.input.request);
         lifecycle.presentation.c2_presentation_gate = vector.input.gate & 1 != 0;
-        publish_sequel_scene_completion(true, completed, &mut lifecycle);
+        publish_sequel_scene_execution(true, completed.then_some(true), &mut lifecycle);
         assert_eq!(
             lifecycle.presentation.request_flags.bits(),
             vector.output.request,
@@ -203,7 +203,7 @@ fn sequel_scene_completion_matches_original_latches_and_vm_writes() {
         );
 
         lifecycle.vm_execution_enabled = vector.input.vm != 0;
-        publish_sequel_scene_completion(false, completed, &mut lifecycle);
+        publish_sequel_scene_execution(false, completed.then_some(true), &mut lifecycle);
         assert_eq!(
             lifecycle.vm_execution_enabled,
             vector.input.vm != 0,
@@ -218,11 +218,47 @@ fn sequel_panel_completion_is_consumed_before_a_new_ui_pause() {
     let mut screen = RuntimePresentationScreen::new([[0; 3]; 256]).unwrap();
     let mut lifecycle = GameLifecycleState::default();
     lifecycle.vm_execution_enabled = false;
-    assert!(!screen.take_scene_completion_output());
-    screen.scene_completion_output = true;
-    publish_sequel_scene_completion(true, screen.take_scene_completion_output(), &mut lifecycle);
+    assert_eq!(screen.take_scene_vm_execution_output(), None);
+    screen.scene_vm_execution_output = Some(true);
+    publish_sequel_scene_execution(
+        true,
+        screen.take_scene_vm_execution_output(),
+        &mut lifecycle,
+    );
     assert!(lifecycle.vm_execution_enabled);
     lifecycle.vm_execution_enabled = false;
-    publish_sequel_scene_completion(true, screen.take_scene_completion_output(), &mut lifecycle);
+    publish_sequel_scene_execution(
+        true,
+        screen.take_scene_vm_execution_output(),
+        &mut lifecycle,
+    );
     assert!(!lifecycle.vm_execution_enabled);
+}
+
+#[test]
+fn sequel_scene_pause_preserves_request_ownership_and_is_consumed_once() {
+    let mut screen = RuntimePresentationScreen::new([[0; 3]; 256]).unwrap();
+    let mut lifecycle = GameLifecycleState::default();
+    lifecycle.vm_execution_enabled = true;
+    lifecycle.presentation.request_flags =
+        crate::native::bloodprg::PresentationRequestFlags::decode(0xA3);
+    lifecycle.presentation.c2_presentation_gate = true;
+    screen.scene_vm_execution_output = Some(false);
+    publish_sequel_scene_execution(
+        true,
+        screen.take_scene_vm_execution_output(),
+        &mut lifecycle,
+    );
+    assert!(!lifecycle.vm_execution_enabled);
+    assert_eq!(lifecycle.presentation.request_flags.bits(), 0xA3);
+    assert!(lifecycle.presentation.c2_presentation_gate);
+    lifecycle.vm_execution_enabled = true;
+    publish_sequel_scene_execution(
+        true,
+        screen.take_scene_vm_execution_output(),
+        &mut lifecycle,
+    );
+    assert!(lifecycle.vm_execution_enabled);
+    publish_sequel_scene_execution(false, Some(false), &mut lifecycle);
+    assert!(lifecycle.vm_execution_enabled);
 }
