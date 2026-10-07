@@ -1,0 +1,6 @@
+# SCRIPT5 Honk offers a real menu after the automatic earned hint.
+park 4 45
+wait 25
+click 230 88
+choose bye_bye
+wait 150

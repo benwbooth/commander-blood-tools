@@ -1,0 +1,5 @@
+# Answer the earned pending Ulikan call through the ordinary bridge phone.
+park 316 45
+wait 25
+click 125 118
+wait 400

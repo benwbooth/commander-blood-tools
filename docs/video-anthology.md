@@ -1628,6 +1628,45 @@ increment at offset 992, from one to two. Hom remains aboard. These two
 additional sites do not resolve his undrawn farewell or establish original
 timing parity; no movies have been rendered from these flows.
 
+`cb-honk-chapter5-{hom,yoko,bug}-hint-v2` continues three different earned
+SCRIPT5 checkpoints: final Oddland crossing, Hom root-politics, and Rondo
+homecoming. Their saved source guards select COD 20563, 20701, and 20824.
+Each spends three bionium exactly once and preserves observed inventory.
+Unlike chapters three and four, this chapter fully presents `More information?`
+at 20918 and opens Honk's nine-row topic menu. The v2 inputs choose its actual
+`bye_bye` row before saving. The final 20937 pointer has no full actor draw and
+is not counted. Each route has 115 events and ten fully source/pixel-matched
+sites, including two startup lines; their union adds ten exact SCRIPT5 sites
+beyond `audit-v17`. The independent review checks 108 saved fields and
+68/73/69-manifest lineages.
+
+| SCRIPT5 Hint | Boundaries | Save Boundary | Save SHA-256 |
+| --- | ---: | ---: | --- |
+| Hom | 4,434 | 4298 | `3ee19f067b3bf4e8073240b1adc2296f5154af23131f1d0ed22033a08e271d19` |
+| Yoko | 4,402 | 4266 | `67db8100502e0d0ada00e801ada62dd0d0434981227c53aa3d549695ff441d0b` |
+| Bug Deluxe | 4,386 | 4250 | `30d860f66a87da81755247675acc418dbd9f7eee41b54328ce0f688b1e8b8c92` |
+
+The initial Hom v1 capture reached that menu but had no completed save, despite
+finishing its input list. It is menu-readiness evidence, not a resumable
+checkpoint. The initial Yoko v1 run was stopped when this omission was found;
+its incomplete inputs are retained as failed evidence. Neither is a v2
+predecessor. Remaining hints still require different naturally earned states.
+
+`cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
+from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
+include the connection sequence, Morning-Oil and battery advice, and the
+current supper-time signoff at 13699. All nineteen full sites, including the
+two startup lines, match source and pixels. It has 4,958 boundaries and 144
+events; the frame-4822 save is
+`25b032da3ec33026de8c04a60ea92c83f01f1c3305de3418b4c6e4b7eb6bdd22`.
+The independent `cb-ulikan-chapter2-review-v1` checks the phone's real hit
+region and pending owner, 23 manifests, 164 saved fields, and all 2,441 VAR
+words. Only Ulikan's known flag, encounter count and consumed three-word C3
+request change, plus `trak1` from zero to one. `ti` remains one, inventory is
+unchanged, and no call remains pending. Holiday and other time-of-day branches
+were not presented; no clock was modified. The later timer-driven calls and
+original scene timing remain separate work.
+
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
 Sinox's candle offer. The trace verifies Sinox's full presentation and departure

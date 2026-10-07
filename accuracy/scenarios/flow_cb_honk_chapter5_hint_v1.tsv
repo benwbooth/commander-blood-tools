@@ -1,0 +1,5 @@
+# Ordinary Honk contact; the earned checkpoint selects the chapter-five hint.
+park 4 45
+wait 25
+click 230 88
+wait 1200
