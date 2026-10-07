@@ -2075,6 +2075,19 @@ Mamy's evolution remains sixty, so no loan is offered; optics/guitar remain
 aboard, medicine with Bug and the ship with Cyberquizz. The second Zen gift,
 Kero settlement and Internet medicine message still require their own routes.
 
+The subsequent `bbb-medicine-stage3-preflight-v1` correctly blocks capture on
+two observer/source contradictions: native settlement seeds population ten,
+not twenty, and enabled `tvm3` sets `A42=1` after Kero activates. The separate
+`bbb-medicine-stage3-observer-review-v1` makes exactly three scoped changes:
+correct the seed, narrowly admit the source-guarded one-time notification, and
+inject the full 184-object typed relationship resolver. Unknown non-sentinel
+references still reject; gift, closure, protected inventory and other mutation
+guards remain unchanged. Independent parent review reproduces all 80 inherited
+and 462 focused tests, 164 checks, and the 66-input/20-artifact seal. The actual
+accepted Mamy save and original 47 ordinary actions remain exact. These are
+offline checks, not evidence of a second gift, settlement or hidden save fields;
+the next capture still requires its complete raw-save and presentation audit.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -2333,6 +2346,18 @@ word added passes, while preserving the failed report and its 1,333-input,
 145-artifact seal. Only that flag, Bronko's encounter count zero-to-two and
 the airport's known flag change. All header and 166 procedure records remain
 exact; 204 exposed saved fields match. Daddy remains uncontacted and pending.
+
+`cb-bronko-chapter3-after-gluxx-repeat-v1` independently loads the family-news
+save, then makes the same two aboard contacts after Daddy has been contacted.
+COD 4330 fully displays with 1,538 matching text pixels; six total sites match
+over 14,404 boundaries and 137 events. The only VAR change is Bronko's encounter
+count one-to-three. The parent's player flag is already 32769; Daddy's count,
+airport flags, inventory and all 166 procedure records remain unchanged.
+Only timer twelve counts down in the header, 1359 to 879. Slot zero at 14268 is
+`cd4ebfbd870f7815db2ea61c98745e93fe0c7e4e754f867e4bdd0d549eb175c2`.
+The separate parent review repeats all 32 semantic checks, reproduces all
+generated JSON exactly, and verifies the 1,335-input/145-artifact seal.
+This one additional exact site is accepted after audit-v25's inventory.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites

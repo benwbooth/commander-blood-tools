@@ -1,0 +1,14 @@
+# Earned family-news checkpoint: Daddy has been contacted, Bronko remains aboard.
+# The four-row cryobox roster places Bronko second, at y=84..94.
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 88
+wait 1200
+park 4 45
+wait 20
+click 230 124
+wait 40
+click 100 88
+wait 1200
