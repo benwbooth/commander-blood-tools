@@ -1816,6 +1816,18 @@ CB now has 1,569 successful-route and 1,838 other normal-route sites, with
 counts and the review policy remain unchanged. Completeness and render
 readiness are still false.
 
+`output/game-flows/audit-v30` retains 549 witnesses and the same 173 excluded
+attempts under the unchanged review policy. The eleven additions are Jo's
+two/three/five/six/eight-dose saves, their five Honk follow-ups, and the
+independently accepted Kero optics continuation. Nine exact CB sites are new:
+COD 3247, 3273, 3316, 3390, 3427, 3501, 3527, 4223 and 4256. CB now has
+1,569 successful-route and 1,847 other normal-route sites, with 993 unobserved
+new/dynamic, 1,007 repeated-wording and 120 control sites. Twelve additional
+unseen sites merely change to repeated-wording status; they are not newly
+observed scenes. BBB counts remain unchanged. All 53 recorder/coverage tests
+pass. Source-only exclusions are not added to witnessed totals, and complete
+normal-branch coverage and render readiness remain false.
+
 The separate `output/diagnostics/cb-dormant-procedure-proof-v1` package closes
 five source-reachability questions within the current hash-bound typed runtime:
 
@@ -4255,6 +4267,36 @@ Each exact audit replay and eleven menu/timing corruption checks pass.
 Together with the earlier two-dose child, these observe seven exact sites
 absent from audit-v29; the individual reports compare against that frozen
 baseline, so their per-route new-site counts must not be added together.
+
+`cb-jo-eight-dose-v1` instead continues from the earned two-dose save. Its
+56,436 planned flight inputs, plus the first neutral frame, return eight
+doses normally. All 56,437 input/pacing/presentation counters agree, with
+105 sound callbacks and released overlay resources. The prior save has
+`scrub` disabled and `compris=1`, so the source skips the five introduction
+texts and sixteen tutorial texts. The capture therefore has ten full sites
+over 4,926 boundaries and 127 events, with the earlier tutorial retained in
+its eleven-manifest ancestry. All 56,472 ordinary actions and every saved
+byte match the preflight; only Jo's encounter count and `vbio` change.
+Manual slot zero at frame 4790 is
+`0e28f9d2774587f503a3ce3fc18858c8b0bdcaf9243abdc0e134315ee3f57755`.
+Exact replay and eighteen corruption checks pass.
+
+`cb-honk-eight-dose-v1` then verifies the source order 3501, 3527, 4223,
+3390, 4256: both eight-dose lines, the credit hint, the resulting five-dose
+status, and its closing reply. Its 6,155 boundaries and 193 events reveal
+24 exact sites across twelve verified lineages. The normal save at frame
+6019 is `84809401b29919fa70b587e6d35ae949be97c05c926981d474ca2328835ef8ae`.
+Whole-save, menu/timing, source/raster, exact replay, and eleven negative
+checks pass. Only COD 3501/3527 are additional to the other newly accepted
+fuel/hint children; their combined addition over audit-v29 is nine sites.
+
+The read-only `cb-honk-help-save-census-v1` binds 565 inputs and checks all
+119 audit-v29 SCRIPT2 manual checkpoints against the nine source hint
+guards and saved procedure-enable bytes. Its only matches are the previously
+used `help2`, `help3`, `help4`, and `help9` prerequisites. No saved checkpoint
+matches `help1`, `help5`, `help6`, `help7`, or `help8`. This is a planning
+result, not an exclusion proof: a future ordinary route may earn their
+prerequisites, and matching guards alone do not prove conversation admission.
 
 ### Honk Residual Menus
 
