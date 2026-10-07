@@ -1249,6 +1249,23 @@ for this leaf. It is an accepted fresh normal-route predecessor, not a
 promotion of either older excluded loan or a whole-scene parity claim.
 No interest continuation is included in this capture.
 
+The independent continuation `bbb-optional-mamy-interest-v1` makes one
+ordinary return from that accepted funded loan. The third visit offers the
+recipe, which is declined through its actual `no_shank` row; the six-item
+GIVE menu is then cancelled through its displayed Cancel row. COD
+26317/26341/26365/26383 all match full source text and pixels. Exactly one
+credit increment, from one to two, occurs at frame 9052. `A6=A17=1`,
+`A10=0`, `B22=1`, evolution 120, and the expected inventory holders are
+preserved; the encounter count becomes three. Credit was already aboard,
+so its reassignment is not misreported as a new holder-change event.
+The 12,899-frame, 479-event route has 23 fully displayed sites, four new
+beyond `audit-v16`, and a closed bridge save at frame 12763 with SHA-256
+`baff7f7b9875348412f067dd878e6e0eb1490d2a4e964d1a44f325523f98c327`.
+`mamy-interest-parent-review-v1/report.json` independently checks fourteen
+lineages, 727 serialized words, current inputs, the actual menus, and the
+single increment. This is one normal interest return, not repeated farming,
+promotion of either excluded loan, or an original whole-scene timing claim.
+
 Two Metagluk alternatives use the earned optics-rejection save, before Super
 Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed
 `bionium` command, adding SCRIPT2 COD 16224/16238/16254/16266. Its 5,018
@@ -1524,6 +1541,18 @@ retained guitar/reaction leaves and the separate Tramp/Super Tromp high nuclear
 responses below. It is a native observation ledger, not a claim that every
 unobserved site is reachable or that every scene matches original timing.
 Both completeness flags remain false; rendering has not started.
+
+`output/game-flows/audit-v17` rechecks 431 retained witnesses and excludes
+154 failed, legacy, or review-rejected attempts under the same three-entry
+policy. CB now has 1,569 successful-route and 1,503 other normal-route sites;
+BBB has 3,013 and 551. Other unobserved/dynamic sites remain 1,369 CB and
+2,252 BBB, separately from repeated wording and control text. The increase
+is 169 CB and sixteen BBB observed source sites, not that many unique spoken
+lines. This includes the completed SCRIPT3 exam answers, Amigo's remaining
+topics and actual unmatched chemistry row, the other reviewed CB menu leaves,
+fresh funded Mamy loan and interest, and Trump bionium retry. It does not
+promote excluded diagnostics or count closed-actor stale-pointer text.
+Both completeness flags remain false, and rendering has not started.
 
 The earned chapter-four continuation `cb-vista-tomb-v2` visits Super Tromp,
 asks about the painting, culture, and Great Yolk, enters the tomb, and accepts
@@ -2818,8 +2847,8 @@ scene. The save has `G1 = 1`, `jerry = 1`, Jerry at the Shark, and Yoko and
 Morning at Trashlando. Cyberock's examination and Hom's reward still follow.
 The normal Cyberock exam (`cb-cyberquizz-dork-v1`) answers the first five
 questions correctly and teleports the diploma aboard. Its save retains the
-DORK item aboard and the five-answer score; later exam questions and failed
-exam branches remain separate coverage work.
+DORK item aboard and the five-answer score; the independent alternatives
+below cover the later questions and failure speeches.
 
 `cb-dork-failed-exam-v1` separately reaches all 32 SCRIPT3 questions using
 one actual wrong choice per question. All 32 question prompts and wrong
@@ -2858,6 +2887,20 @@ source/menu/save checks pass; only the diploma's holder, `Bof=5`, and
 `quest=20/25` differ from the failed-exam parent. Their slot-zero hashes are
 `8372cd011caf197e4988a443201175282540fd5d8be9e800c4676cdef155bfa1`
 and `dea1542dfe9c57c1abb7ebe7c7a71df4673dd1c1d56b3c02c3519566d8faf69b`.
+
+The final two leaves, `cb-dork-answers-26-30-v1` and
+`cb-dork-answers-31-32-v1`, add the last seven positive replies. They record
+16,051/16,283 frames, 903/943 events, and 104/110 matched sites. The last
+leaf first answers questions one through three correctly, then defers the
+last two points until questions 31 and 32. Both independently pass the same
+source, opposite-response absence, menu, lineage, and 139-field save checks.
+Their slot-zero hashes are
+`84845d378171eeb530fd8da03aabe55738d7e9d689c43e131effa6ae34e98472`
+and `9fcb5a4d5c040715a563eab13a13e621bb503a0db27316b1c1e8b39df3f21612`.
+Together with the first-five success and all-wrong failure route, this
+covers all 32 SCRIPT3 question prompts and both answer responses without
+enumerating every answer combination. The final-question wrap remains
+unpublished in these routes; SCRIPT5's separate exam is not closed by them.
 
 Returning to Hom with the diploma (`cb-hom-oddland-v1`) earns the scrambler
 and completes Jerry's black-hole call, followed by Cyberion's third message.

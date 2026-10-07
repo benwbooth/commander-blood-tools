@@ -1,0 +1,22 @@
+# One ordinary return from parent-accepted funded-loan-v3 on frozen BBB47fec.
+# Encounter2 in the earned save makes this the recipe visit, not stroll.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+choose no_shank
+# Allow normal recipe-decline clip and GIVE menu to finish; no gift selection.
+wait 1200
+# Six aboard inventory items place Cancel at (190,128); verify live rows.
+click 200 134
+wait 800
