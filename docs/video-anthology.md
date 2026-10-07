@@ -1104,6 +1104,18 @@ and no whole-scene parity is claimed. Refusal still retains five credits and
 all six lines; Metagluk's wrong-syllable control retains two credits and all
 27 lines, with unchanged item ownership/flags relative to the earlier controls.
 
+The shared Commander Blood control replays the exact Hom root-politics and
+save fragments from the earned science checkpoint. `flow_cb_load0_v2.tsv`
+waits until after the observed studio-logo completion before dismissing the
+TV panel; the old click occurred during the logo and failed before LOAD.
+`cb-control-review.json` independently checks 73 lineage manifests and all
+11 fully revealed, source-matched sites. The repaired control has 6,396 frames
+and 185 events, with the same final observed globals and objects. Its slot-zero
+save at frame 6260 is byte-identical to the earlier control, SHA-256
+`6325f31cb9679635effda993443402d8be34b1978fa25175e286dce9f405b567`.
+This is a normal-input CB regression check, not new branch coverage or
+whole-scene original-game timing proof.
+
 Three Papy GIVE alternatives continue independently from the earned
 `bbb-gluxx-resupply-v1` save. Their actual menus offer the carried items;
 none uses a forced transfer or the strike-payment checkpoint:
@@ -1274,6 +1286,30 @@ visible menus, and closed slot-zero saves. The reported globals and compact
 object fields are unchanged; those fields do not include Bob's aggression
 or BAS shown flags, so this is not a claim that the complete state is unchanged.
 These leaves do not establish the separate Kanary topic's availability.
+
+`cb-chapter3-morning-venusia-v1` recontacts Morning Oil after receiving his
+key rings, then visits Venusia, declines the first offer, and accepts the
+second without an aboard credit. It fully presents Morning's obedience line
+and six shop lines, adding seven sites beyond `audit-v16`. The large SCRIPT3
+shop catalogue is not counted: the actual no-credit guard closes the visit.
+All nine fully revealed sites match source text. The run has 14,539 frames
+and 295 events and saves at frame 14403, SHA-256
+`b878828406df3c82510a360384aa8c4ccb8db51977290e0d425fd8ebccf0eec3`.
+The 35-manifest review checks 139 saved fields and both displayed yes/no
+menus. All globals, actor locations, and inventory ownership/flags remain
+unchanged; only the ship and local navigation target move to Venusia.
+
+`cb-optional-maziok-tromp-ondoyant-v1` revisits Magnu from the earned
+Ondoyant-recruitment save after the curse is lifted. It greets Maziok with
+`ga`, selects the offered `tromp` and `ondoyant` topics, and leaves without
+taking his Ekato/Sat continuation. Six fully presented BAS sites include
+five new sites beyond `audit-v16`; all twelve full sites match source text.
+It records 10,065 frames and 288 events and saves at frame 9929, SHA-256
+`225fd201910f9a4035c1af9ef2d78eb61bd9cc8ddede6ac7ee8c7bc31ce422bc`.
+The 61-manifest review checks 121 saved fields and all eight selected menu
+rows. Globals and actor/item ownership remain unchanged, with Maziok still
+on Magnu. Both reviews are in `cb-optional-followup-audit-v1`; neither claims
+original whole-scene parity or completion of all optional conversations.
 
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and
