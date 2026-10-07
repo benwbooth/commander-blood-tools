@@ -67,6 +67,13 @@ Reply-menu lines (b4&0x10) over the bridge (Honk/menu) hold until the native
 word-choice rows are open and drawn, and the verifier checks those rows against
 the authored reply section; no row is selected.
 
+Known open failures after the full run (14 sites, all retained in each batch's
+`coverage.json`): 6 BBB Honk/menu reply menus (SCRIPT1 COD 0x727, 0xD67, SCRIPT2
+COD 0x2223, 0x24C1, 0x2D3A, 0x383C) never open their rows within the frame cap
+(BBB's word-choice path needs further decoding); BBB SCRIPT10 COD 0x189E fails
+measuring an inline-menu word through the recovered draw routine; 6 CB lines fail
+as described below.
+
 Still deferred, with reasons in `planning.json` (491 of 12,457 after plans v9):
 4 record-field conditions, 58 numeric templates, 46 generated inventory menus,
 33 control-only sites, and 350 contact-scene `reply_choice_menu` lines (b4&0x10). Their reply rows
