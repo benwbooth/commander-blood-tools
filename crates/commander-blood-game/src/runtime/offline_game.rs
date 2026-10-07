@@ -1154,9 +1154,9 @@ pub(super) fn capture_static_text(
         let reset_report = state_delta(&bootstrap_var, &reset_var)?;
         let console_choice = plan.context.console_choice();
         if let Some(choice) = console_choice {
-            // activate_horn_choice / activate_radio_choice: the radio bank reloads for
-            // the radio record, and for Honk only in the sequel.
-            if choice == super::offline_static::StaticConsoleChoice::Radio
+            // activate_horn_choice / activate_radio_choice / nav_actor_handler_4: the
+            // radio bank reloads for radio records and calls, and for Honk only in BBB.
+            if choice != super::offline_static::StaticConsoleChoice::Horn
                 || plan.game == crate::game::GameVariant::BigBugBang
             {
                 host.services_mut().load_radio_sound_bank()?;

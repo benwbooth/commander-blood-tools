@@ -45,20 +45,29 @@ Accepted authored controls, without rewriting them:
 - b4&0x08 rejection skip: `vm_op_a6_text` (0x660C) only arms `vm_skip_count`
   (DS:0x67AB), which `vm_run_wrapper` (0x55A4) discards once the line presents;
 - b4&0x40 history lines with exactly two sections and no resume menu: the plan's
-  `history_concepts` must equal section 1 (the binder rejects anything else) and
-  are pushed into the cleared concept history before the A6 executes. The title
-  says `[prepared concept history]`.
+  `history_concepts` must equal section 1, repeated until the `detail & 7`
+  required-match count is reachable (the binder rejects anything else), and are
+  pushed into the cleared concept history before the A6 executes. The title says
+  `[prepared concept history]`.
 
 Lines owned by the built-in `Honk` or `menu` records use a `bridge_console`
 context: the console's immediate HONK/MENU choices (`nav_choice_handler_0`
 0x8713, `nav_choice_handler_3` 0x8848) queue them over the bridge without a
 contact transition, so the exporter loads the radio bank where those handlers do
 and requests no scene. The binder checks the owner against the profile built-in.
+An actor with no direct DESCRIPT record (CB Ulikan) cannot be reached by contact;
+its lines use `choice: radio_call`, the C4 deferral `nav_actor_handler_4` (0x81FB)
+performs for an answered call, which also reloads the radio bank.
 
-Still deferred, with reasons in `planning.json`: random/record conditions, resume
-(reply-menu) lines, numeric templates, generated inventory menus, control-only
-sites and the remaining lines without a direct Character DESCRIPT record (Ulikan's
-radio calls). The verifier compares
+Still deferred, with reasons in `planning.json` (204 of 12,457 after plans v7):
+random/record conditions, numeric templates, generated inventory menus,
+control-only sites, and 368 `reply_choice_menu` lines (b4&0x10). Their reply rows
+belong to the word-choice interface, which `run_frame_tail` only advances on
+presented scene frames; the frozen static scene reports none
+(`frame_presented` stays false), so the rows are never drawn. Six CB Honk
+inline-menu lines (including the cheat-mode lines at SCRIPT2 COD 0x1229..0x1291)
+fail closed: menu text arms dialogue chatter, and CB's HONK choice loads no
+streamed bank, so which bank is resident depends on earlier play. The verifier compares
 inline-menu words slot by slot (BBB against its English display words) and
 subtitles by normalized text.
 

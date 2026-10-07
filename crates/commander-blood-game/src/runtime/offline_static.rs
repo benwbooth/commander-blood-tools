@@ -49,7 +49,9 @@ pub(super) enum StaticTextContext {
     },
     /// Built-in bridge records (Honk, menu) present over the bridge itself: the
     /// console's immediate choices queue them without a contact scene transition
-    /// (nav_choice_handler_0 0x8713, nav_choice_handler_3 0x8848).
+    /// (nav_choice_handler_0 0x8713, nav_choice_handler_3 0x8848). An answered
+    /// radio call is deferred to C4 by nav_actor_handler_4 (0x81FB), which reloads
+    /// the radio bank, likewise without a contact scene.
     BridgeConsole {
         actor_offset: usize,
         choice: StaticConsoleChoice,
@@ -63,6 +65,7 @@ pub(super) enum StaticTextContext {
 pub(super) enum StaticConsoleChoice {
     Horn,
     Radio,
+    RadioCall,
 }
 
 impl StaticTextContext {
@@ -113,12 +116,15 @@ pub(super) fn sha256(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
 }
 
-/// Return the authored history candidates (section 1) of a history-gated line.
+/// Return the history a player selection would leave for a history-gated line:
+/// its section-1 candidates, oldest first, repeated until the `detail & 7`
+/// required-match count of `history_contains_required_matches` is reachable.
 pub(super) fn history_candidates(text: &ScriptText) -> Vec<ScriptWordId> {
     if !text.control.uses_history_condition() {
         return Vec::new();
     }
-    text.words
+    let candidates = text
+        .words
         .iter()
         .skip_while(|word| !matches!(word, ScriptTextWord::SectionSeparator))
         .skip(1)
@@ -126,7 +132,10 @@ pub(super) fn history_candidates(text: &ScriptText) -> Vec<ScriptWordId> {
             ScriptTextWord::Dictionary(word) => Some(*word),
             _ => None,
         })
-        .collect()
+        .collect::<Vec<_>>();
+    let required = usize::from(text.control.detail() & 0x07);
+    let repeats = required.div_ceil(candidates.len().max(1)).max(1);
+    candidates.repeat(repeats)
 }
 
 pub(super) fn validate_plain_text(text: &ScriptText) -> Result<()> {
@@ -146,26 +155,38 @@ pub(super) fn validate_plain_text(text: &ScriptText) -> Result<()> {
         .iter()
         .filter(|word| matches!(word, ScriptTextWord::SectionSeparator))
         .count();
-    if text.control.uses_history_condition() {
+    let expected_sections = 1
+        + usize::from(text.control.uses_history_condition())
+        + usize::from(text.control.arms_resume());
+    if expected_sections > 1 {
         ensure!(
-            sections == 2
+            sections == expected_sections
                 && !matches!(text.words.first(), Some(ScriptTextWord::SectionSeparator))
-                && !history_candidates(text).is_empty(),
-            "unsupported_static_text: history_section_shape"
+                && text.words.windows(2).all(|pair| !matches!(
+                    pair,
+                    [ScriptTextWord::SectionSeparator, ScriptTextWord::SectionSeparator]
+                ))
+                && !matches!(text.words.last(), Some(ScriptTextWord::SectionSeparator)),
+            "unsupported_static_text: section_shape"
         );
     }
     // b4&0x08 only arms vm_skip_count (DS:0x67AB) in vm_op_a6_text (0x660C); vm_run_wrapper
     // (0x55A4) consumes it only when the line was rejected, so a published line ignores it.
+    // b4&0x10 arms a resume cursor and hands the next section to the word-choice
+    // interface (vm_op_a6_text 0x660C). That interface only advances on presented
+    // scene frames, which a frozen static scene never reports, so the reply rows
+    // would never be drawn: keep these lines unsupported.
     ensure!(
         !text.control.arms_resume(),
-        "unsupported_static_text: resume_control"
+        "unsupported_static_text: reply_choice_menu"
     );
     for word in &text.words {
         match word {
             ScriptTextWord::Dictionary(_) => {}
             ScriptTextWord::StateNumber(_) => bail!("unsupported_static_text: state_number"),
             ScriptTextWord::InventoryChoices => bail!("unsupported_static_text: inventory_choices"),
-            ScriptTextWord::SectionSeparator if text.control.uses_history_condition() => {}
+            ScriptTextWord::SectionSeparator
+                if text.control.uses_history_condition() || text.control.arms_resume() => {}
             ScriptTextWord::SectionSeparator => bail!("unsupported_static_text: word_sections"),
         }
     }
@@ -262,14 +283,25 @@ pub(super) fn bind_static_text(
     );
     if let Some(choice) = plan.context.console_choice() {
         let builtins = profile.builtins();
-        let expected = match choice {
-            StaticConsoleChoice::Horn => builtins.horn,
-            StaticConsoleChoice::Radio => builtins.menu,
-        };
-        ensure!(
-            expected == Some(actor.id),
-            "static console choice does not queue the line owner"
-        );
+        match choice {
+            StaticConsoleChoice::Horn | StaticConsoleChoice::Radio => {
+                let expected = if choice == StaticConsoleChoice::Horn {
+                    builtins.horn
+                } else {
+                    builtins.menu
+                };
+                ensure!(
+                    expected == Some(actor.id),
+                    "static console choice does not queue the line owner"
+                );
+            }
+            StaticConsoleChoice::RadioCall => ensure!(
+                actor.kind == ScriptObjectKind::Actor
+                    && builtins.horn != Some(actor.id)
+                    && builtins.menu != Some(actor.id),
+                "static radio call owner must be a non-built-in actor"
+            ),
+        }
     } else {
         ensure!(
             actor.kind == ScriptObjectKind::Actor,
@@ -460,6 +492,11 @@ mod tests {
             ]
         );
         assert!(history_candidates(&plain(0x8000)).is_empty());
+        // CB SCRIPT2 BAS 0x4DA1: detail 0x82 requires two matches of one candidate.
+        let mut twice = plain(0x8240);
+        twice.words = vec![word(0), ScriptTextWord::SectionSeparator, word(6)].into_boxed_slice();
+        let hello = dictionary.resolve_source_offset(6).unwrap();
+        assert_eq!(history_candidates(&twice), vec![hello, hello]);
         for words in [
             vec![word(0), ScriptTextWord::SectionSeparator],
             vec![ScriptTextWord::SectionSeparator, word(6)],
@@ -468,10 +505,10 @@ mod tests {
             text.words = words.into_boxed_slice();
             assert!(validate_plain_text(&text).is_err());
         }
-        // A resume-armed history line opens a reply menu; it stays unsupported.
-        let mut resume = plain(0x8050);
-        resume.words = vec![word(0), ScriptTextWord::SectionSeparator, word(6)].into_boxed_slice();
-        assert!(validate_plain_text(&resume).is_err());
+        // Reply-menu lines (CB SCRIPT1 COD 0x7E2: question | yes no) stay unsupported.
+        let mut question = plain(0x8010);
+        question.words = vec![word(0), ScriptTextWord::SectionSeparator, word(6), word(12)].into_boxed_slice();
+        assert!(validate_plain_text(&question).is_err());
         // Without the history bit, separators remain unsupported.
         let mut sections = plain(0x8000);
         sections.words = vec![word(0), ScriptTextWord::SectionSeparator, word(6)].into_boxed_slice();

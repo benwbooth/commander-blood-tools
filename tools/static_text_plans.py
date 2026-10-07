@@ -22,33 +22,47 @@ GAMES = {"cb": "commander_blood", "bbb": "big_bug_bang"}
 CONSOLE_RECORDS = {"Honk": "horn", "menu": "radio"}
 
 
+
 def candidate(site, descriptions):
     authored = site["authored"]
-    # A6 b4&0x40 lines (vm_op_a6_text 0x660C) are gated on the concept history
-    # matching section 1; they present section 0 when the player has said it.
-    history = (site["content_kind"] == "text_and_choices" and authored["flags_b4"] & 0x56 == 0x40
-               and len(authored["sections"]) == 2)
-    if site["content_kind"] != "text" and not history:
+    flags = authored["flags_b4"]
+    # vm_op_a6_text (0x660C): b4&0x40 gates the line on the concept history matching
+    # the next section; b4&0x10 publishes the following section as reply choices.
+    # Section 0 is always the displayed text.
+    history, resume = bool(flags & 0x40), bool(flags & 0x10)
+    sections = 1 + history + resume
+    if site["content_kind"] not in ("text", "text_and_choices") or (
+            site["content_kind"] == "text_and_choices" and sections == 1):
         return None, site["content_kind"]
-    # ScriptTextControl's random/record/resume/history bits. b4&0x08 only arms the
-    # rejection skip (vm_skip_count DS:0x67AB), which a presented line discards, so
-    # it does not gate display. The native binder independently checks the typed
-    # source instruction rather than trusting this classification.
-    if authored["flags_b4"] & (0x16 if history else 0x56):
+    # Random and record conditions stay deferred. b4&0x08 only arms the rejection
+    # skip (vm_skip_count DS:0x67AB), which a presented line discards. The native
+    # binder independently checks the typed source instruction.
+    if flags & 0x06:
         return None, "conditional_or_continuation_control"
+    if resume:
+        # The reply rows need the word-choice interface, which only advances on
+        # presented scene frames; a frozen static scene reports none.
+        return None, "reply_choice_menu"
+    if site["content_kind"] == "text" and (history or resume):
+        return None, "non_plain_word_list"
     if not authored["flags_b5"] & 0x80:
         return None, "inactive_source_request"
     selector = authored["presentation_selector"]
     # The graph retains the serialized byte; the native decoder reads signed i8.
     if selector != 255 and not -1 <= selector <= 31:
         return None, "non_character_presentation_selector"
-    if len(authored["sections"]) != (2 if history else 1) or any(
+    if len(authored["sections"]) != sections or any(
             word["kind"] != "dictionary" for section in authored["sections"] for word in section):
         return None, "non_plain_word_list"
     console = CONSOLE_RECORDS.get(authored.get("record_name"))
+    if console is None and not site["direct_description_candidates"]:
+        # A contact transition resolves the owner's DESCRIPT record; an owner with
+        # none can only reach the bridge as an answered radio call
+        # (nav_actor_handler_4 0x81FB). The binder rejects non-actor owners.
+        console = "radio_call"
     matches = [descriptions[identity] for identity in site["direct_description_candidates"]]
     if console:
-        record = dict(name=authored["record_name"])
+        record = dict(name=authored.get("record_name", ""))
     elif not matches or matches[0]["authored"]["kind"] != "Character":
         return None, "no_direct_character_description"
     else:
@@ -68,10 +82,14 @@ def candidate(site, descriptions):
                 if console else dict(kind="source_default", actor_offset=authored["record_offset"],
                                      descript_records=[record["name"]]))
     if console:
-        plan["title"] = plan["title"].replace("[prepared source-default]", "[prepared bridge console]")
+        plan["title"] = plan["title"].replace(
+            "[prepared source-default]",
+            "[prepared radio call]" if console == "radio_call" else "[prepared bridge console]")
     if history:
         # Prepared state: exactly the authored candidates, oldest first.
-        plan["context"]["history_concepts"] = [word["offset"] for word in authored["sections"][1]]
+        candidates = [word["offset"] for word in authored["sections"][1]]
+        required = authored["flags_b5"] & 0x07  # detail & 7 required matches
+        plan["context"]["history_concepts"] = candidates * max(1, -(-required // len(candidates)))
         plan["title"] = plan["title"].replace("[prepared source-default]", "[prepared concept history]")
     if site["kind"] == "bas":
         require(hashes.get("bas_sha256"), "BAS candidate is missing its source hash")
