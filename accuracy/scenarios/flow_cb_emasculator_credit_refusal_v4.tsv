@@ -1,0 +1,8 @@
+# Independently load the earned post-Bronko kitchen save; do not recontact him.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose refuse
+wait 500

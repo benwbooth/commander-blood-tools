@@ -1,0 +1,9 @@
+# Independently load the earned post-Bronko kitchen save; vbio is zero.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose teleport
+choose teleport
+wait 500

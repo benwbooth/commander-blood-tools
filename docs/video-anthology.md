@@ -2205,6 +2205,31 @@ or original-scene parity claim is made. Independent Emasculator leaves must
 normally reload the accepted kitchen save, then prove actual region recovery
 and shop admission; the kitchen checkpoint alone is not shop coverage.
 
+The independent `cb-emasculator-credit-refusal-v4` and
+`cb-emasculator-container-v2` now prove that ordinary reload recovery and
+actual shop admission. Both traces show the active planet region, target list
+`[88,92]`, Moskito selection and Emasculator record 31 owning the offered menus.
+Refusal selects `refuse`; container acceptance selects `teleport` at the credit
+menu and again at the container menu. They record 6,886/7,454 boundaries,
+189/263 events, 10/19 full sites and 83/154 matching raster samples. Their union
+adds nineteen exact Emasculator sites after audit-v26, not twenty-five.
+
+The sealed nine-lineage review checks 146 inputs and all 5,887 bytes in each
+of four saves, with all headers, padding and 127 procedure records preserved.
+Parent read-only replay passes 577 checks; whole-VAR and sequence hashes also
+match every save's own event. Refusal changes only Emasculator's encounter,
+Moskito's access counter and `bion=1`: the non-aboard-container guard executes
+after actor clear, without transferring an item. Container acceptance changes
+the same counters, transfers credit to the source-authored recipient Bronko,
+brings the container aboard, and sets `PP1=1` and `trak9=1`. `bion` returns to
+zero and `vbio` remains zero. Automatic/manual saves are byte-identical within
+each branch: refusal at 4368/6750 is
+`855578aba30ac0d6d39a867b5fb56b6b9a851a56cbf0394059733b3a5a7f8a2c`;
+container at 5002/7318 is
+`71652146fea9c9e09728bf818179a5285123e2d4f310bc8336488ab5cb936a6d`.
+Terminal 25138/25614 are not credited as full presentations. This is not a fuel
+sale, promotion of earlier failures, or original-executable scene-parity proof.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
