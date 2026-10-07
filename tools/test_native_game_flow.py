@@ -57,12 +57,17 @@ def frame(number=0):
 class FlowTests(unittest.TestCase):
     def test_review_registry_is_hash_bound_and_has_a_standalone_snapshot(self):
         policy = load_review_exclusions()
-        self.assertEqual(list(policy["entries"]), [
-            "b6ac2360cdf86287289ea747bd70073384411f2a4051cd4f963abb9698b26ced"])
-        entry = next(iter(policy["entries"].values()))
-        self.assertEqual(entry["review"], dict(
-            path="output/game-flows/bbb-optional-papy-strike-audit-v1/original-scene-review.json",
-            sha256="85abe0fcf4136fa8a6779c22411582c64b04ee1bf02700743dc11effbc9c3094"))
+        self.assertEqual({key: entry["review"] for key, entry in policy["entries"].items()}, {
+            "b6ac2360cdf86287289ea747bd70073384411f2a4051cd4f963abb9698b26ced": dict(
+                path="output/game-flows/bbb-optional-papy-strike-audit-v1/original-scene-review.json",
+                sha256="85abe0fcf4136fa8a6779c22411582c64b04ee1bf02700743dc11effbc9c3094"),
+            "2a88cd49649d72a3792fd315971e96c5be3a30d26253511b9052d9da203e1943": dict(
+                path="output/game-flows/bbb-optional-mamy-loan-audit-v1/lend-diagnostic.json",
+                sha256="6c100bffceee540eb49b8f34e0845e78a35a928a3e414e3655f8bad1044ceafc"),
+            "41db2cb21a544eb9496301bf497b21f84442f3be28ffcb410fc5fec659d9d808": dict(
+                path="output/diagnostics/mamy-funded-loan-v1/loan-diagnostic.json",
+                sha256="51d05804a587ac45345d2cac1990a976a73347bc9deac9c7bdf6cee220665eee"),
+        })
         provenance = policy["provenance"]
         self.assertEqual(hashlib.sha256(provenance["snapshot"].encode()).hexdigest(), provenance["sha256"])
         self.assertEqual(digest(provenance["path"]), provenance["sha256"])

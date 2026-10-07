@@ -47,9 +47,11 @@ Renaming a capture or declaring a runtime update cannot bypass the exclusion.
 Missing or malformed policy fails closed. New records/audits embed the exact
 policy snapshot and hash separately from game-source provenance; coverage also
 hashes its imported recorder helper. Historic manifests and saves are untouched.
-The initial entry excludes the independently reviewed Papy strike-payment
-diagnostic, not unrelated branches. The 53 recorder/coverage tests and 104
-parameterized subtests pass, including unaffected siblings and immutable inputs.
+The registry excludes the independently reviewed Papy strike-payment diagnostic
+and both unverified Mamy lending attempts, not unrelated branches. Original-game
+diagnostic staging also rejects a nonempty semantic lineage-rejection result
+before reading any checkpoint bytes. Direct and ancestral rejection tests cover
+that consumer; 85 original-capture tests and 53 recorder/coverage tests pass.
 
 Normal-flow scenarios reject `contact`, `teleport`, and `alien` injection commands.
 They also reject observed save loads without predecessor validation and the CB
@@ -1125,6 +1127,20 @@ flags, but never presents the required thank-you at COD 26221. Its closed
 save is not accepted as a predecessor or substituted for that missing line.
 `lend-diagnostic.json` retains the exact omission and input/state boundaries;
 no original-runtime equivalence or runtime cause is claimed for it.
+
+The funded retry, `bbb-optional-mamy-funded-loan-v2`, makes exactly one deduction
+from two credits to one and still records no COD 26221 at a frame boundary.
+It closes after 13,110 frames and 755 events, but remains diagnostic-only;
+`output/diagnostics/mamy-funded-loan-v1/loan-diagnostic.json` records the failed
+thank-you requirement. The hash-bound exclusion registry prevents either lending
+save from becoming a normal-route predecessor or contributing coverage.
+Positive remaining credit therefore does not resolve the omission. The bounded
+`mamy-thank-transition-analysis-v1/report.txt` identifies a candidate accepted A6
+request followed by C9 teardown and profile reset within frame 10047. Existing
+original instruction tests permit that same-pass order, so it is not yet a
+proven native defect: the original might also erase the line before display.
+This retry also spans numeric-pool and scene fixes, not an isolated scene-fix
+comparison. No interest follow-up is based on either unverified save.
 
 Two Metagluk alternatives use the earned optics-rejection save, before Super
 Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed

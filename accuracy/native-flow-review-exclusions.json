@@ -8,6 +8,22 @@
         "path": "output/game-flows/bbb-optional-papy-strike-audit-v1/original-scene-review.json",
         "sha256": "85abe0fcf4136fa8a6779c22411582c64b04ee1bf02700743dc11effbc9c3094"
       }
+    },
+    {
+      "manifest_sha256": "2a88cd49649d72a3792fd315971e96c5be3a30d26253511b9052d9da203e1943",
+      "reason": "Mamy lending lacks the required fully presented COD 26221 thank-you; retained as an unresolved diagnostic, not normal-route coverage or checkpoint ancestry. This does not establish an original/native mismatch.",
+      "review": {
+        "path": "output/game-flows/bbb-optional-mamy-loan-audit-v1/lend-diagnostic.json",
+        "sha256": "6c100bffceee540eb49b8f34e0845e78a35a928a3e414e3655f8bad1044ceafc"
+      }
+    },
+    {
+      "manifest_sha256": "41db2cb21a544eb9496301bf497b21f84442f3be28ffcb410fc5fec659d9d808",
+      "reason": "Mamy funded lending still lacks the required fully presented COD 26221 thank-you despite retaining positive credit; unresolved diagnostic, not normal-route coverage or checkpoint ancestry. The capture does not establish whether the original also suppresses the line.",
+      "review": {
+        "path": "output/diagnostics/mamy-funded-loan-v1/loan-diagnostic.json",
+        "sha256": "51d05804a587ac45345d2cac1990a976a73347bc9deac9c7bdf6cee220665eee"
+      }
     }
   ]
 }
