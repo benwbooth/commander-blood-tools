@@ -1,0 +1,20 @@
+# Same earned first-visit parent and route as the locomoshun alternative.
+click 230 124
+wait 40
+click 100 105
+wait 40
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose twist
+wait 400

@@ -1,0 +1,8 @@
+# Earned mastachok-perfume-v2 checkpoint: C1=6, perfume held by Mac.
+# Leave the pending customs call unanswered and recontact the surface guard.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+wait 600

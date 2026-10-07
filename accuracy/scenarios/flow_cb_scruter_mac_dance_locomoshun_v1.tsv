@@ -1,0 +1,21 @@
+# Earned morning-mastachok-v3 save: perfume aboard and first Mac encounter.
+# Retain the witnessed inventory inspection and ordinary Mastachok travel.
+click 230 124
+wait 40
+click 100 105
+wait 40
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 149 20
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose locomoshun
+wait 400

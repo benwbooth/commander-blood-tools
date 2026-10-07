@@ -1,0 +1,20 @@
+# Earned first Super Zen perfume-gift save: first Mamy visit, two credits.
+# Accept one purchase, then cancel the actual five-item inventory menu.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 80
+click 62 95
+wait 100
+click 250 125
+wait 200
+choose accept
+wait 400
+click 200 128
+wait 400

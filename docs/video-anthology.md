@@ -1718,6 +1718,16 @@ and 120 control sites. BBB's counts remain unchanged. Both completeness and
 render readiness remain false. All 64 focused recorder/catalog/coverage tests
 pass after this slice.
 
+`output/game-flows/audit-v24` retains 498 witnesses and excludes 167 attempts.
+Nineteen CB sites are new: eight password-rejection sites, six perfumed-guard
+lines, four dance replies and one Bronko return follow-up. CB now has 1,569
+successful-route and 1,724 other normal-route sites; remaining categories are
+1,145 unobserved new/dynamic, 978 repeated-wording and 120 controls. BBB counts
+are unchanged, but its replacement-perfume purchase checkpoint is now accepted
+after the separate corrected audit. The interrupted Bronko capture is excluded;
+its completed direct-recorder replacement contributes only fully rendered text.
+All 64 focused tests pass. Completeness and render readiness remain false.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -2028,6 +2038,35 @@ by historical archives remain identified as source/fixture-only checks.
 No game or build ran in either preflight review. This accepts the offline
 observer, not a new purchase, gift, settlement, save or coverage witness.
 
+The following `bbb-medicine-prefix-mamy-perfume-v3` is now accepted as the
+replacement-perfume purchase step. Its first full audit, preserved unchanged in
+`bbb-internet-medicine-prefix-v4`, stopped at an invalid relationship invariant:
+181 holder-exposing telemetry objects were incorrectly treated as the complete
+target directory. The native directory has 184 objects. In particular, forty
+saved relationships legitimately target the unexported Auxiliary record `baby1`
+at offset zero; only `0xFFFF` means sentinel. Unknown non-sentinel values must
+remain unresolved, not silently become sentinel.
+
+The sealed `bbb-internet-medicine-relationship-diagnosis-v1` checks 543 raw
+relationships and 50,137 event relationships. Independent parent review
+reproduces its 146 tests, rechecks 1,520 input/artifact hashes and 26 literal
+source excerpts, then reruns the full audit with only the disproven target
+lookup corrected. `bbb-medicine-stage2-parent-review-v1` passes 66,226 checks:
+13 full source-matched sites, 80 full presentations, 144 matching rasters,
+one credit debit from two to one, the ordinary perfume acquisition, and 36
+separately attributed growth updates. Both saves account for all 9,344 bytes:
+822 exposed fields, 4,184 VAR words, 128 timer words, 256 opaque timer bytes,
+six sequence slots and 122 unchanged procedure records. Each has 22 explained
+VAR-word changes. The automatic save alone has timer two at fourteen; the
+manual header is unchanged. No unexplained runtime or saved-state change remains.
+
+The 7,538-boundary, 278-event capture was not replayed or edited to obtain this
+acceptance. Its manual save is
+`58bb9802ad5ef407813b56f72ee116d25280f9d370fe3bec115fb6c41ff3b5ab`.
+Mamy's evolution remains sixty, so no loan is offered; optics/guitar remain
+aboard, medicine with Bug and the ship with Cyberquizz. The second Zen gift,
+Kero settlement and Internet medicine message still require their own routes.
+
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
 `audit-v19`; the repeated seven-dose announcement is counted once. Every leaf
@@ -2196,6 +2235,26 @@ and `C1` change in the latter; inventory remains unchanged. Its final save is
 These are distinct authored rejection branches, not all numerical permutations.
 They are accepted after audit-v23 and are not yet included in its totals.
 
+`cb-scruter-mac-perfumed-repeat-v1` recontacts the surface guard from the
+earned perfume-delivery save, leaving the queued customs call unanswered.
+All six `mas2ter` sites, COD 31586/31618/31638/31662/31694/31720, fully display.
+Eight total sites match across 6,694 boundaries and 150 events. Only the two
+encounter counters change; `C1=6`, perfume remains with Mac, and all globals,
+inventory, header and procedure bytes remain unchanged. The reviewed save is
+`380d5c5e1665f516cab849347509640088cb64d120c94e2b75af8eae89d864bb`.
+
+The four `cb-scruter-mac-dance-{locomoshun,twist,mashpotatoes,madison}-v1`
+leaves reuse one earned first-visit save and its actually offered five-choice
+menu. Each reveals one distinct additional response at COD 29392, 29434,
+29478 or 29516, plus the shared rejection sequence. Each has 8,431 boundaries
+and ten full sites; event counts are 259/257/259/259. Their identical manual
+saves are `c7db970be4e442c54fb790d3601283df84f6aaf115476a2a6c2923e3ba70cab6`.
+Normal arrival with perfume aboard sets `C1=5`; only navigation, local-position
+bits, two encounter counters and timer twelve otherwise change. Perfume is
+not transferred. Independent reviews check 22-manifest lineages, all 2,441 VAR
+words, 229 exposed fields and every header/procedure byte. These four authored
+replies are alternatives, not a product of unrelated state combinations.
+
 The sealed read-only `cb-bug-chapter3-access-plan-v1` finds no admitted SCRIPT3
 shop parent among 80 inspected checkpoints: credit is held by Izwalito and
 `PP1`, `ach`, and the global named `-1` are zero. Current chapter-handoff source
@@ -2215,6 +2274,27 @@ entirely in SCRIPT1/2 and supplies no SCRIPT3 checkpoint. The other 1,364
 inputs and all eight sealed artifacts remain exact. The bounded shop analysis
 is accepted with this explicit integrity exception, not as proof of global
 original-game unreachability. It authorizes no shop capture and adds no sites.
+
+The sealed `cb-bronko-chapter3-remaining-plan-v1` classifies 41 further targets.
+Its 24 BAS targets belong to a connected topic graph, but no normal SCRIPT3
+admission is established. The prior broad topic witness is SCRIPT2 and cannot
+fill that gap. The read-only plan verifies 431 fixed inputs and distinguishes
+the 17 remaining COD candidates without claiming global unreachability.
+
+`cb-bronko-chapter3-kitchen-v1` was interrupted by its assistant-written
+supervisor: it applied a contact-roster assertion to the ordinary Save/Load
+options menu and sent SIGINT. The partial capture and supervisor are preserved;
+no new save or accepted witness resulted. A direct unchanged-helper rerun,
+`cb-bronko-chapter3-kitchen-v2`, completes the same ordinary contact and save.
+It fully reveals COD 6276. COD 6425 is published only after the actor closes,
+with no complete raster, and remains uncredited. Three total sites match over
+8,721 boundaries and 81 events. Independent review checks 42 lineages,
+2,599 VAR words, 204 exposed fields and 166 procedure records: only Bronko's
+encounter count six-to-seven and timer twelve's countdown change. The native
+slot-zero save at 8585 is
+`0ff05bfc0d57b986d684ca45d21c0f7801237a0924a3b113903307d0dd8eda26`.
+This establishes one normal follow-up, not the missing topic-menu admission
+or original whole-scene parity.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
