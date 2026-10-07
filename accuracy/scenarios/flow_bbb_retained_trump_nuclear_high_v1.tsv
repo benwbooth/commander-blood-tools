@@ -1,0 +1,22 @@
+# Stage 1 only: prove Mega Paul's ordinary writing re-offer from clean P1.
+# LOAD disables travel; restore it through the ordinary console.
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 75 31
+wait 40
+click 250 125
+frames 600
+choose accept
+frames 1800
+# Verify the actual ten-item GIVE menu and Cancel row during the wait.
+click 200 151
+frames 200

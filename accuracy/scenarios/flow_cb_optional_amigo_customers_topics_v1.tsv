@@ -1,0 +1,65 @@
+# Revisit the same ordinary Eden encounter for each distinct customer refusal.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 16 46
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Morning_Oil
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Izwalito
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Bronko
+wait 400
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Tina_Burner
+wait 400
+# Give a known customer and one of the four actually offered passwords.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose Eviscerator
+choose croolas
+# Revisit talk through the Eviscerator submenu, then exhaust distinct replies.
+choose Eviscerator
+choose talk
+choose Eviscerator
+choose talk
+choose Tina_Burner
+choose Purple_Haze
+choose Purple_Haze
+choose Eviscerator
+choose prison
+choose prison
+choose prison
+choose Galabar
+choose Galabar
+choose Galabar
+choose Galabar
+choose meteorut
+choose nitrium
+choose bye_bye
+wait 700

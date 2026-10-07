@@ -1378,6 +1378,23 @@ include 52 unobserved-wording sites, 31 already-observed-wording sites, and
 the shared coverage counts. These candidates identify attribution limits,
 not new runtime captures, instruction-provenance proof, or original parity.
 
+`cb-optional-amigo-customers-topics-v1` revisits Eden for the four distinct
+customer refusals, then names Eviscerator, gives the offered `croolas`
+password, and follows the actual talk, Tina, Purple Haze, prison, Galabar,
+and nitrium menus. All 23 attributed full sites match source; thirteen BAS
+replies and the password reply add fourteen sites beyond `audit-v16`.
+The 24 selected choices, 35-manifest lineage, 139 saved fields, and current
+inputs pass `cb-menu-contract-review-v1/amigo-v1.json`. The run closes after
+24,513 frames and 666 events; slot zero at frame 24377 has SHA-256
+`2dd2698348c2c123fc14e11c4a3feef7469922f76395f61207fe69eedea66e62`.
+Only `evi` changes from zero to one; `M1=secret=0`, Amigo stays at the bar,
+and Splatch stays with him. Actor/item ownership is unchanged. A separate
+`amigo-terminal-review.json` binds each customer refusal to its preceding
+menu and checks all 947/914/912/1124 expected text pixels. These four
+closed-actor lines are not included in the fourteen attributed-site count.
+The other passwords, remaining topic responses, and Splatch refusal are
+not implied by this leaf.
+
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and
 eight matching sites add no wording; the hidden response is not counted.
@@ -2044,6 +2061,30 @@ and `a76d63ebea3c91ddf2b36dea1fd6b8b9ca19ab61173c680aa5cc0b3c5f435414`.
 These optional consumed-item branches are not used to replace the preserved
 main route. Trump high nuclear and broader residual coverage remain separate
 questions; this stage does not establish complete-game or original-scene parity.
+
+The subsequent Trump-high fork uses three ordinary saved stages from the clean
+Trump guitar checkpoint. `bbb-retained-trump-nuclear-high-v1` buys Mega Paul's
+actually re-offered writing for one credit, then exits the ten-item GIVE menu.
+V3 refuses Trump's painting and gives writing, ship, decoder, and weapons;
+evolution follows `290 -> 390 -> 440 -> 480 -> 510`. Only after that saved
+threshold was verified does v4 give nuclear technology. COD 4585 draws all
+339 expected pixels; evolution rises `510 -> 710` and energy becomes 1000.
+The middle response 4520 is not published; population, aggression, and `B28`
+do not change at the high-gift boundary. Writing COD 6460 and nuclear COD
+4585 add two sites beyond `audit-v16`.
+
+V1/V3/V4 record 5,153/6,337/5,369 frames, 1,007/1,053/971 events, and
+10/15/10 matching sites. Their closed slot-zero hashes are
+`cfc01c3bb95899918dd41110b6dfbfd8e557aa9af397620880ff2130fdd43a82`,
+`472197bf655f1878ccf0520786e17c8e5a23d9b507a2456fe1c9a337f8101f52`,
+and `aa419d251c7e836e7c6f8259ed53a65cba72b9b2631ee5faacd48fcada5210f0`.
+The independent `bbb-retained-trump-nuclear-high-parent-review-v1` checks
+87 lineage manifests and 373 saved words in each stage, excluding the
+nonpersistent `time` alias. Actual Cancel rows and immediate gift effects
+are bound in the stage reviews. The final state retains two credits, three
+bionium, `B86=1`, `A64=0`, and all three passengers aboard. Failed v2's wrong
+Cancel click remains excluded. The earlier retry-bionium branch, invitation
+cleanup, and original whole-scene parity are not claimed by this fork.
 
 `bbb-blue-wave-early-ring-with-mummy-v3` takes the separate one-bionium route
 through Betakam, offers the ring before the mummy, and then gives the mummy.

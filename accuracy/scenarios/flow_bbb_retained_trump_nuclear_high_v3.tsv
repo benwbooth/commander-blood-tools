@@ -1,0 +1,26 @@
+# Stage 2 retry from the verified writing-purchase save, not the failed v2 leaf.
+# The v2 trace proved the actual Trump seven-item Cancel row is (190,133).
+park 4 45
+wait 25
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 220 92
+wait 40
+click 250 125
+frames 600
+choose refuse
+choose writing
+choose ship
+choose decoder
+choose weapons
+frames 1800
+# Nuclear remains unselected; close at the observed Cancel position.
+click 200 138
+frames 200
