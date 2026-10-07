@@ -1797,6 +1797,46 @@ new/dynamic, 994 repeated-wording and 120 control sites. BBB counts are
 unchanged. Both completeness and render readiness remain false; the pending
 Jo run contributes no coverage to this audit.
 
+`output/game-flows/audit-v28` retains 537 witnesses and excludes 173 attempts
+under the unchanged three-entry review policy. Forty-one exact CB sites are
+new: the fuel-sale/refusal alternatives, Tina and Migrator visit/answer
+alternatives, the synthetic tie purchase and Maxxon's credit reward. CB now
+has 1,569 successful-route and 1,836 other normal-route sites, with 1,014
+unobserved new/dynamic, 997 repeated-wording and 120 control sites. BBB counts
+are unchanged: its accepted first Kero contact establishes medicine-route
+ancestry but repeats already witnessed text. The two new exclusions are a
+graphics-initialization failure and the failed local Maxxon navigation attempt.
+All 53 recorder/coverage tests pass. Completeness and render readiness remain
+false; no movies are rendered from these flows.
+
+The separate `output/diagnostics/cb-dormant-procedure-proof-v1` package closes
+five source-reachability questions within the current hash-bound typed runtime:
+
+| Profile | Procedure | COD Body, Half-Open | Text Sites |
+| --- | --- | --- | --- |
+| SCRIPT3 | `port1` | 6458..6515 | 3 |
+| SCRIPT3 | `migrator4` | 18341..18745 | 14 |
+| SCRIPT3 | `oto1` | 26918..26947 | 1 |
+| SCRIPT3 | `sort` | 31620..31731 | 5 |
+| SCRIPT5 | `morn` | 372..410 | 2 |
+
+Each gate starts disabled; no authored activation enables it. The reviewed
+argument also covers ordinary entry, text resume/skip, BAS execution, profile
+reload and save ancestry from fresh state. Production compiler/decoder output
+matches all ten COD/BAS/DEB/DIC/VAR resource images, and regenerated control-flow
+graphs exclude entry into these bodies. An independent read-only replay passes
+19 mechanical groups, 50 structural negatives and all 1,280 procedure-patch
+value cases, plus 44 production unit tests with seven explicitly ignored.
+The report binds 1,151 inputs; its sixteen-file seal has SHA-256
+`e0a0eeb2e24ccbbf569a7ab2895efaacbe5e1d16841ec3a130ac384a59a14d4a`.
+
+This is a source-only result, not observed playback, binary reconstruction or
+original-DOS unreachability. Imported or edited saves with odd procedure patch
+values enable every candidate, and unknown save ancestry is outside the proof.
+The call inventory is explicitly reviewed, not a whole-program theorem prover.
+These 25 sites remain visible in the unchanged coverage census; neither its
+counts nor the semantic capture-exclusion policy silently removes them.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -4018,6 +4058,15 @@ is observed over the retained entrance scene, without a decoded
 evidence, not a claim that every source talk clip played or that this scene
 matches the original executable. Terminal COD 34247 is not credited as fully
 presented after actor closure.
+
+Two additional accepted replays, `cb-maxxon-credit-reward-clock00-v1` and
+`cb-maxxon-credit-reward-clock01-v1`, use the same earned predecessor and
+ordinary input recipe with valid startup RTC packed seconds zero and one.
+They contain 7,078/7,080 boundaries and 229/226 events respectively, preserve
+the same final save bytes and reproduce the same twelve full sites. Neither
+adds coverage or displays 34181. The startup clock choice is recorded, not a
+save mutation; these absences do not establish that the missing line is
+unreachable. Source-condition analysis remains necessary before further replay.
 
 The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,
