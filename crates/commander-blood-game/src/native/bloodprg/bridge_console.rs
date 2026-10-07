@@ -18,7 +18,8 @@ const CONSOLE_TARGET_Y_BASE: u16 = 80;
 const CONSOLE_PALETTE_FIRST_INDEX: u8 = 123;
 const CONSOLE_PALETTE_BASE: Rgb6 = Rgb6::new(16, 12, 0);
 const CONSOLE_PALETTE_HOVER: Rgb6 = Rgb6::new(63, 0, 0);
-const CONSOLE_HOLD_TICKS: u16 = 90;
+/// Panorama arc the bridge seeks to when a console row is activated (frame 45).
+pub const CONSOLE_HOLD_TICKS: u16 = 90;
 const PANEL_CENTER_X: i16 = 100;
 
 /// One six-bit-per-channel color from the original VGA palette.

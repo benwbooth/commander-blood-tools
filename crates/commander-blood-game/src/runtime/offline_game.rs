@@ -1164,6 +1164,24 @@ pub(super) fn capture_static_text(
         } else {
             host.services_mut().request_scene_transition(bound.actor)?;
         }
+        if console_choice.is_some() {
+            // Console rows and answered calls present with the bridge turned to the
+            // console arc (the seek requested when a row activates).
+            host.services_mut()
+                .request_bridge_seek(crate::native::bloodprg::CONSOLE_HOLD_TICKS)?;
+            let mut seeked = false;
+            for _ in 0..max_frames {
+                ensure!(
+                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    "native lifecycle exited during the console seek"
+                );
+                if !host.services().bridge_seek_requested()? {
+                    seeked = true;
+                    break;
+                }
+            }
+            ensure!(seeked, "bridge console seek did not finish");
+        }
         let mut scene_ready = console_choice.is_some();
         for _ in 0..if scene_ready { 0 } else { max_frames } {
             ensure!(
@@ -1184,6 +1202,12 @@ pub(super) fn capture_static_text(
             "static contact scene did not reach its deferred-actor boundary"
         );
         let before_preparation = host.services().semantic_trace_snapshot(&lifecycle)?;
+        if console_choice.is_none() {
+            // The actor presentation that would clear the deferred-actor hold never
+            // runs here, and the held scene's video queue is not serviced until it is
+            // released; without this the character clip stays on its first frame.
+            host.services_mut().release_scene_bridge_hold();
+        }
         for name in plan.context.descriptions() {
             ensure!(
                 host.services_mut()

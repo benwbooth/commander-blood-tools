@@ -49,6 +49,14 @@ pub struct RuntimeSceneTransition {
 }
 
 impl RuntimeSceneTransition {
+    /// Release the bridge hold so the held scene's presentation queue is serviced.
+    ///
+    /// A started actor presentation clears the deferred-actor hold; the static text
+    /// exporter never runs the actor, so it releases the hold explicitly.
+    pub(super) fn release_bridge_hold(&mut self) {
+        self.state.bridge_blocked = false;
+    }
+
     /// Native contact pointers refer to VAR byte offsets, not DEB directory IDs.
     pub(super) fn record_bindings(
         &self,

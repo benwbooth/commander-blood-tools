@@ -200,7 +200,7 @@ pub use audio_stream::{
     load_audio_stream_source, refill_audio_stream, start_audio_stream,
 };
 pub use bridge_console::{
-    BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
+    CONSOLE_HOLD_TICKS, BridgeChoiceBackend, BridgeChoicePanelPhase, BridgeConsoleActorState, BridgeConsoleChoice,
     BridgeConsoleContext, BridgeConsoleDispatchOutcome, BridgeConsoleGate,
     BridgeConsolePalettePlan, BridgeConsoleState, BridgeDeferredActionKind, BridgeDeferredRecord,
     BridgeDeferredState, BridgeRecordChoice, BridgeRecordChoiceContext, BridgeRecordChoiceOutcome,

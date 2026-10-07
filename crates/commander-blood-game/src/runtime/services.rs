@@ -1608,6 +1608,12 @@ impl<'window> ModernGameServices<'window> {
             .context("scene transition is already being updated")
     }
 
+    pub(super) fn release_scene_bridge_hold(&mut self) {
+        if let Some(transition) = self.scene_transition.as_mut() {
+            transition.release_bridge_hold();
+        }
+    }
+
     /// Run the recovered synchronous alien-overlay coordinator to completion.
     pub fn run_runtime_alien_overlay_cycle(
         &mut self,
