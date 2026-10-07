@@ -3951,6 +3951,40 @@ discussion reveals Erazor.
 Otto's transplant/Ekatomb route earns the lens, and the normal observatory
 selection delivers it to Maxxon. His youth-treatment and surgery alternatives
 leave the lens with Otto and add ten distinct fully shown dialogue sites.
+
+A separate credit-reward fork now starts from `cb-otto-lens-v1`, before lens
+delivery. `cb-maxxon-credit-magnus-v1` meets Morning on Magnus, leaves through
+`bye_bye`, and retains both earned items. The consecutive accepted prefixes
+`cb-maxxon-credit-call1-v1`, `cb-maxxon-credit-call2-v2` and
+`cb-maxxon-credit-advert-v1` answer the actual queued Scruter K warning,
+Scruter Mac coded message and Bug advertisement. Venusia is revealed normally.
+The pending-record timer gate preserves the countdown during queued calls;
+after Mac clears, twenty countdown steps trigger Bug, and after Bug clears,
+120 steps trigger the final Scruter K call. No actor was selected by injection.
+The earlier `call2-v1` attempt produced no trace because its launch lacked the
+Nix graphics environment; it is preserved and supplies no ancestry or coverage.
+
+`cb-maxxon-credit-tie-v1` then visits Venusia with the lens still aboard and
+buys the synthetic tie through `yes`, `beauty`, `necktie`, `synthetic`, `buy`,
+and the offered `necktie` return. This supplies previously unobserved BAS 9780,
+"You pay 4 CREDS." The authored price is not a numeric-balance observation:
+the native flow transfers its one credit inventory record to Bug. The tie
+becomes aboard from its saved Jerry Khan holder, exactly as the live transfer
+records show. Purchase sets `ach=1` at 6385 and shop closure resets it at 6630.
+Maxxon remains at the observatory; lens, `lent=0` and `PP1=0` are preserved.
+
+Independent `cb-maxxon-credit-route-v1` reviews verify every prefix's complete
+5,887-byte save, whole-VAR and sequence hashes, 229 exposed fields, exact action
+recipes and full source text. The final purchase review binds 169 inputs and
+fifteen lineage manifests. Its 8,020 boundaries and 298 events expose twelve
+full sites; all six decisions match their actual rendered menus. Both saves,
+automatic at 6660 and manual at 7884, are
+`a1d35b24d08d993b4f64fcb521f7d932505c3feed2fe90cafc09aac2b5393876`.
+Only thirteen VAR words and timer seven change in the purchase; all procedure
+entries, sequence slots and other save bytes are preserved. These prefixes
+establish the spent-credit prerequisite, not yet Maxxon's reward conversation
+or original-executable parity.
+
 The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,
 Scruter Mac's first coded message, and Bug Deluxe's full Venusia commercial.

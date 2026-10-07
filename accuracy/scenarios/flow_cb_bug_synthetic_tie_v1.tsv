@@ -1,0 +1,22 @@
+# Spend the earned credit before delivering Otto's lens to Maxxon.
+# Venusia was revealed by the ordinary Bug Deluxe radio advertisement.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose yes
+choose beauty
+choose necktie
+choose synthetic
+choose buy
+choose necktie
+wait 250
