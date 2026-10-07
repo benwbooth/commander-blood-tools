@@ -1704,6 +1704,44 @@ arrays, the roster and source-ordered guards. The hint changes only Honk's
 encounter/topic words and bionium; inventory and the pending phone call are
 preserved. No clock, timer or saved value was injected.
 
+Two normal visit-order prefixes earn the final two SCRIPT5 mission hints.
+`cb-big-band-before-bob-v1` follows the diploma checkpoint through Bug Deluxe,
+the actual pending Scruter K/Hanna call, and Big Band, while deferring Bob's
+optional cryobox contact. It retains `bok=0`, `exp=1` and three bionium.
+`cb-wedding-ring-request-before-bob-v1` then meets Tina and Migrator without
+collecting Ondoyant's ring. The corresponding `cb-wedding-ring-request-v1`
+starts from the already accepted Big Band arrival where Bob was contacted,
+so it retains `bok=1` instead. These are ordinary reordered visits, not
+constructed combinations of save fields. The request routes change only seven
+raw VAR words: Yoko's position/flags, Tina's position/encounter count,
+Migrator's encounter count, Big Band's access count and the Orxx position.
+All globals and inventory holders remain unchanged in those prefixes.
+
+The pre-Bob request selects Honk's COD 20641 reminder to see Bob; the
+post-Bob request bypasses that guard and selects the ring reminder at 20883.
+Both then close through the real `bye_bye` row and spend three bionium once.
+Together with the Hom, Yoko, Rondo and Bug Deluxe leaves above, all six
+source-ordered SCRIPT5 mission hints now have normal-input witnesses.
+This does not establish coverage of every Honk topic or bionium-count variant.
+
+| Earned Route | Boundaries | Save Boundary | Slot-0 SHA-256 |
+| --- | ---: | ---: | --- |
+| Big Band before Bob | 18,444 | 18308 | `36f33ad90dca87b89ebda5e30acf3eb0fec61becb952339095dbafd3242d9aa6` |
+| Ring request after Bob | 15,076 | 14940 | `1503848e12dafc156da6a5be3e14377efffc074c90cc95bdf48722d5f71a2ee5` |
+| Ring request before Bob | 15,076 | 14940 | `57b53b5d70d2808b9af92aaad81703a9dc1884a59866219919362b0308a24ae7` |
+| Honk ring hint | 4,398 | 4262 | `654928596129660160d0f3169c22733499d64831777e1f0417c88e7019250490` |
+| Honk Bob hint | 4,402 | 4266 | `80ed6c7660e6e87b2ba6534b765fa0090a52c7056ee4e9184129e17b65fc3f4a` |
+
+The `cb-big-band-order-review-v1/v2` reviews check 70/71/71/72/72-manifest
+lineages respectively, 108 summarized save fields and every one of 2,504 raw
+VAR words. The hint leaves each change only Honk's encounter/topic fields and
+bionium. Both ring-request routes also produce the game's normal `LAST`
+navigation autosave at frame 7190, byte-identical to the later explicit save.
+The first pre-Bob review incorrectly expected only one completed save; its
+rejection is preserved and the replacement checks both saves explicitly.
+The three preparatory routes add no new text sites; the two reminders add
+two sites beyond `audit-v18`, with ten full matched sites per hint.
+
 The later `cb-honk-chapter5-remaining-topics-v1/v2/v3` attempts exposed a
 subtitle drawing defect at BAS 8086, not an unavailable normal topic. Its
 authored line extends beyond column 319. `commander_subtitle_edge_oracle.py`
@@ -1734,6 +1772,20 @@ his `talk` topic and the single three-bionium hint debit. Inventory holders
 are unchanged. The route-specific menu review carries sparse state through
 idle waits; no runtime or timing change was needed. This does not claim all
 remaining Honk branches or original whole-scene parity.
+
+`cb-honk-chapter5-explanation-fallback-v2` follows that saved topic route.
+Its three normal selections are `explanations`, `bye_bye`, and `talk`.
+The first farewell reveals the explanation block's untagged BAS 12066,
+"Yes! Commander..."; after its authored yield, `talk` closes the contact.
+V1 observed the same response but then waited for a nonexistent optimization
+menu, so remains failed and supplies no checkpoint. V2 has 4,581 boundaries,
+121 events and ten full matched sites, adding that one site beyond `audit-v18`.
+It saves at frame 4445 with SHA-256
+`d700ae75e1b10b18c4778cc1e67f3760d07ae425fb1c59920be1b8b8949356d3`.
+`cb-honk-explanation-review-v1` verifies all three rendered menus, the closed
+endpoint, 69 lineage manifests and all saved VAR words. Only Honk's encounter
+count and stored `explanations` topic change; bionium stays zero and all
+inventory holders are preserved. No runtime change or rendering was needed.
 
 The ERO `no` alternative also exposed a normal-LOAD defect: BBB's apparent
 `time` scalar at byte 8368 is a read-only alias of the adjacent SCRIPT2.DEB

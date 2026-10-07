@@ -1,0 +1,12 @@
+# Reopen the earned Big Band destination and meet Tina and Migrator.
+# Leave the ring with Ondoyant; do not contact her in this fragment.
+park 4 0
+wait 25
+click 160 150
+wait 80
+click 160 150
+wait 180
+click 216 72
+wait 180
+click 80 88
+wait 2200

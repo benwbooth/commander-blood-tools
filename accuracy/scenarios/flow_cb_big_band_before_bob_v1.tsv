@@ -1,0 +1,29 @@
+# Follow the earned route to Big Band but defer the optional Bob contact.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 83 11
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 500
+park 4 45
+wait 25
+click 125 118
+wait 700
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 100 100
+wait 40
+click 250 125
+wait 300
+click 216 72
+wait 180
+click 80 88
+wait 1000

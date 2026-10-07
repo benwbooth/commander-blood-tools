@@ -1,0 +1,8 @@
+# The untagged explanation response yields, then talk closes the contact.
+park 4 45
+wait 25
+click 230 88
+choose explanations
+choose bye_bye
+choose talk
+wait 200
