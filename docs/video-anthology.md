@@ -1788,6 +1788,15 @@ sites. BBB's accepted second-perfume prerequisite contributes no new exact
 sites; its prior counts remain unchanged. All 64 focused tests pass. Both
 completeness and render readiness remain false; no flow movies are rendered.
 
+`output/game-flows/audit-v27` retains 514 witnesses and excludes 171 attempts,
+including the still-running post-container Jo collection. Twenty-eight exact
+CB sites are new: nineteen Emasculator container/refusal sites, four Morning
+repair-notice sites and five Bronko fourth-visit/radio sites. CB now has 1,569
+successful-route and 1,795 other normal-route sites, with 1,058 unobserved
+new/dynamic, 994 repeated-wording and 120 control sites. BBB counts are
+unchanged. Both completeness and render readiness remain false; the pending
+Jo run contributes no coverage to this audit.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
