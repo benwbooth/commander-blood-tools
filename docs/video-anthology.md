@@ -2122,9 +2122,16 @@ wrapper incorrectly counted the initial null-action record; a separate review
 corrected only that enumeration. The unchanged observer then rejected Kero's
 population change from fourteen to sixteen at frame 8123, where its recurrence
 expected fifteen. Both failed reports and the capture are retained unchanged.
-The source of that discrepancy is under investigation; the full raw-save audit
-has not run, neither save is approved for continuation, and no coverage or
-settlement-completion claim is made from this candidate.
+The separate `bbb-stage3-growth-discrepancy-v1` diagnosis proves that the
+observer used the wrong rate: saved/live `B25=2` selects D6 at COD 5578,
+group `0x0800`, rate fifteen. The source spelling `population_conflict` emits
+D6 growth; `population_growth` emits D4 conflict. At population fourteen and
+energy 1,000, the unchanged D6 arithmetic adds two at rate fifteen. Both rates
+add one at populations ten through thirteen, concealing the earlier mistake.
+The diagnosis checks 110 assertions, including 26 original-handler emulator
+cases, without changing the game or replaying the candidate. A separate revised
+observer review is in progress; neither save is approved for continuation, and
+no coverage or settlement-completion claim is made from this candidate yet.
 
 Six chapter-two follow-ups are independently reviewed under
 `cb-chapter2-followup-review-v1`. They add sixteen exact sites beyond
@@ -2413,6 +2420,25 @@ replayed. Manual zero is
 `2a1b39073ca188cab58923d24bcbc89306f3a9c667417092671917d4d1bdd0d0`.
 The one new site is accepted after audit-v25; no additional game replay or
 runtime change was needed for the corrected audit.
+
+`cb-izwal-chapter3-kidnapping-news-v1` returns normally to Corpo from the
+earned post-Splatch save and contacts Izwalito under Hito. Eight new SCRIPT3
+COD sites, 1277 through 1455, fully present the kidnapping report. Ten total
+sites match across 8,986 boundaries and 238 events. The terminal farewell at
+1477 publishes after actor teardown and receives no qualified-site credit.
+No BAS menu opens. Izwalito moves to Trashlando at 6224; still-enabled `got`
+returns him to Hito at 6225, as the source requires while Eviscerator is not
+in prison. The final holder therefore remains unchanged. Only foreground
+actor flags, encounter counts and ordinary ship coordinates change; globals,
+all header/timer/sequence bytes, padding and 166 procedure records do not.
+The parent review validates 37 lineage manifests, 204 exposed fields, all
+2,600 saved VAR/padding words, and both saved-event hashes. Automatic nine at
+6266 and manual zero at 8850 are byte-identical, SHA-256
+`2c4c29c016cad7805e1a5533dcb1c2131f7eaeeb83337d982a429fb31bf09861`.
+Two C2-specific checker adaptation failures are preserved separately; the
+corrected profile/guard checks pass without replaying or editing the capture.
+These eight sites are after audit-v25. The local source/menu review does not
+establish global BAS unreachability or original whole-scene timing parity.
 
 `cb-ulikan-chapter2-first-call-v1` answers the actual pending Ulikan phone call
 from the Gluxx family-topic save. Its seventeen complete SCRIPT2 COD sites
