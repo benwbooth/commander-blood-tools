@@ -4145,6 +4145,70 @@ assumption failures are preserved, along with their bounded repairs. Exact
 review replay and thirteen in-memory negative cases pass. No original scene
 parity, new movie duration, or complete-game claim is made.
 
+The separate read-only `cb-honk-recap-census-v1` checks 119 accepted SCRIPT2
+manual checkpoints from `audit-v29`, including older manifests without exposed
+global observations. None has the remaining recap flags `trak19`, `trak2b`,
+`trak8`, `trak10`, `trak11`, `trak12`, `trak18`, `trak20`, or a nonzero `C0`.
+This closes no reachability question; it only rejects immediate recap replays
+from those particular saved states.
+
+### Earned Two-Dose Status
+
+`cb-jo-two-dose-v1` loads the accepted Emasculator-container save and plays
+ordinary minigame inputs generated with `navigate:2`. Unlike the earlier
+ten-dose target that returned seven, this plan and native replay both return
+exactly two doses. The replay completes 14,424 normal actions, including
+14,388 flight inputs and the first neutral `await-alien` frame. All 14,389
+minigame input, pacing, and presentation counters agree. The native overlay
+records 15 sound callbacks, restored bridge state, and released resources.
+
+The 6,544 game-frame boundaries and 269 compact events repeat 31 fully revealed
+sites; this is an earned prerequisite, not new dialogue coverage. The independent
+review binds 1,733 inputs and ten lineage manifests. All 5,887 saved bytes match
+the preflight prediction: only Jo's encounter count, `compris`, `vbio`, and the
+one-time `scrub` procedure change. The manual save at frame 6408 is
+`10abc201e935a64cd228fa408cef8da5067dfcb4c3467ff312e32866d5530cc5`.
+Exact audit replay and eighteen in-memory negative cases pass.
+
+`cb-honk-two-dose-v1` then contacts Honk normally, chooses `remember`, and exits
+through the returned `bye_bye` menu. Its 5,927 boundaries and 177 events contain
+21 full sites, including new COD 3247/3273: the two-dose status and reminder.
+The eleven-manifest review verifies both actual menus, six-frame clicks,
+matching source text and glyph rasters, all 229 exposed fields, and every save
+byte. Bionium and all globals remain unchanged; only Honk's encounter/topic
+and timer 15 change. Slot 0 at frame 5791 is
+`947ab10ead583fef136c6c17027dfa82294b9ac453853b42754bd5d8b3d8c589`.
+Exact review replay and eleven negative cases pass. These two witnesses
+postdate `audit-v29`; its frozen census is unchanged. No movies are rendered.
+
+### Izwalito Magnus Guard
+
+`output/diagnostics/cb-izwal-magnus-self-guard-v1` resolves the missing SCRIPT2
+COD 16801/16843 branch under the bound production semantics. The compiler matches
+all five imported resources. Real frame-walker and handler execution shows
+16726 publishing first, then 16760 on a later eligible scan. Successful 16760
+publication clears its pending skip and marks Magnus known in that same pass.
+Shared presentation gates block the two later texts; the next ordinary scan
+rechecks `!Magnus.known` and jumps past them. None of these texts saves a resume
+cursor. The guarded `trak2b=1` assignment consequently remains unexecuted.
+
+Five abstract states and ninety transitions preserve the pass-boundary
+invariant that unknown Magnus implies active 16760. The exhaustive decoded
+operand census checks 3,271 COD and 1,106 BAS tokens, finding no alternate
+Magnus-clear or `trak2b` writer. Activation, profile reload, and normal save
+restoration ownership are separately reviewed. A deliberately inconsistent
+unit state publishes both targets, demonstrating why static connectivity alone
+is insufficient; it is neither a normal save nor a proposed gameplay input.
+
+The parent review reproduces both helper outputs and the nine accepted prefix
+traces, checks all 191 accepted SCRIPT2 save files in the bound older census,
+and passes 72 production tests with four explicit unrelated omissions. Its
+40-file seal is `e6deafd3be2d084149f6d670aa66d85c56a26d46a9f3b533b9ca708767ff2240`;
+2,269 inputs remain unchanged. This is a narrow source-level result, not a
+whole-game replay or original-DOS impossibility proof. No runtime, coverage,
+or review-exclusion policy was changed, and no input/RNG sweep is justified
+for this branch under the frozen semantics.
+
 The following Magnus visit completes Morning Oil's battery request with one
 goodbye selection. Answering queued calls then plays Scruter K's final warning,
 Scruter Mac's first coded message, and Bug Deluxe's full Venusia commercial.
