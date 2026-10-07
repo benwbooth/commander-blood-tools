@@ -2548,6 +2548,24 @@ Super Zen has returned to Crazystone. The curse is still active at this point.
 the curse-removal ceremony. Its ordinary saved checkpoint confirms
 `maledict=0` and the painting held by Super Zen; it is a verified chapter-four
 continuation, not the end of the chapter or game.
+Two ordinary Beauregard contacts now bracket that cure. The actual fifth row
+of the ten-entry aboard roster selects the actor in both leaves.
+`cb-beauregard-chapter4-cursed-v1` uses the crossing save with `maledict=1`;
+eight cursed COD sites are new. It records 6,494 boundaries, 126 events and
+ten total full sites. `cb-beauregard-chapter4-recovered-v1` uses the earned cure
+save with `maledict=0` and Attrox already known; COD 1716/1740 are new, with
+6,494 boundaries, 88 events and four total full sites. The separate
+Attrox-unknown branch is not claimed. Both save at 6358. The cursed save is
+`0651a902ab0bcf811170b47bbb2dc47b38f7791dc9a7a152aa9b1129827d5db6`;
+the recovered save is
+`34211952021e9772582c80e10a3aaae05bf6d32ae0792d91d9899ce0b0ad4c6f`.
+The complete raw audit checks 185 exposed fields, all 2,714 VAR words, padding,
+headers and 85 procedure records per leaf, plus saved VAR/sequence hashes and
+48/55 lineage manifests. Only Beauregard's encounter zero-to-one changes on
+both leaves; the cursed leaf additionally sets the source-explained Player
+`PresentationBlocked` flag, already set in the recovered parent. Inventory
+and globals stay unchanged. These ten sites are accepted after audit-v25.
+
 `cb-bratakas-hom-v3` explores Bratakas's planet and leisure topics, trades the
 old decoder for the ondoyant picture, and follows his farewell into Hom's
 hiding place. The earned D.O.R.K. diploma recruits Hom. The saved endpoint has
