@@ -1,0 +1,29 @@
+# Fresh review candidate on frozen BBB 47fec12d; no acceptance promotion.
+# Second visit from the accepted at-war-v1 ordinary continuation, not a war response.
+# LOAD leaves travel disabled regardless of the predecessor endpoint setting.
+click 230 152
+wait 40
+click 100 82
+wait 10
+park 4 0
+wait 20
+move 150 150
+wait 10
+click 150 150
+wait 40
+click 62 95
+wait 60
+click 250 125
+wait 200
+choose no_stroll
+wait 400
+# Medicine must precede decoder; audit both immediate source effects.
+choose medicine
+wait 400
+choose decoder
+wait 400
+# Six remaining inventory rows: actual Cancel origin (190,128).
+click 200 134
+wait 300
+choose lend
+wait 600

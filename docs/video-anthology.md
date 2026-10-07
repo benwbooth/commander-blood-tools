@@ -1215,6 +1215,25 @@ the original child exited, and all 160 frozen inputs remained unchanged.
 This diagnostic does not itself promote the two excluded native loans or
 provide an accepted interest predecessor; a fresh native review is separate.
 
+The fresh `bbb-optional-mamy-funded-loan-v3` now passes that separate review.
+It starts from the accepted at-war checkpoint and follows ordinary
+no-stroll, medicine, decoder, inventory Cancel, and Lend inputs on the
+current original-backed queue-clock runtime. All fourteen fully displayed
+sites match source and pixels; COD 26185 adds one site beyond `audit-v16`.
+The loan deducts exactly one credit, from two to one, and closes in profile
+one with `A6=A17=1`, `A10=0`, `B22=1`, and evolution 120. Medicine and decoder
+stay with Mamy with cleared gift flags; credit, writing, and perfume are
+aboard. The original watch above supports no required thank-you draw on
+this branch. Native frame samples do not establish the transient A10 write
+or intervening original instruction order. Its 12,831 frames and 482 events
+end with slot zero at frame 12695, SHA-256
+`9570f4e5a27145078600fdd9d2322b5a06aacadadb312fb2a4efe1723b84aa0e`.
+`dork-mamy-parent-review-v1/report.json` independently checks current inputs,
+recursive lineage, actual menus, immediate gift effects, and 727 saved words
+for this leaf. It is an accepted fresh normal-route predecessor, not a
+promotion of either older excluded loan or a whole-scene parity claim.
+No interest continuation is included in this capture.
+
 Two Metagluk alternatives use the earned optics-rejection save, before Super
 Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed
 `bionium` command, adding SCRIPT2 COD 16224/16238/16254/16266. Its 5,018
@@ -2738,6 +2757,23 @@ The normal Cyberock exam (`cb-cyberquizz-dork-v1`) answers the first five
 questions correctly and teleports the diploma aboard. Its save retains the
 DORK item aboard and the five-answer score; later exam questions and failed
 exam branches remain separate coverage work.
+
+`cb-dork-failed-exam-v1` separately reaches all 32 SCRIPT3 questions using
+one actual wrong choice per question. All 32 question prompts and wrong
+replies, the first 31 next-question replies, and all four failure speeches
+are fully displayed and source-matched. The final-question wrap at COD
+14496 is not published in this route; it is not counted or forced to draw.
+Its 17,624 frames, 982 events, and 108 matching sites add 90 sites beyond
+`audit-v16`, including repeated next-question wording. The diploma remains
+with Cyberquizz and `quest=Bof=R1=0`; the only final global change is `ti`
+from two to three, with navigation moved to Cyberock. Slot zero at frame
+17488 has SHA-256
+`8258b5652d46beadf1822e2ebfd7c7758bc4fefbad629eb231b26df20e333a70`.
+`dork-mamy-parent-review-v1/report.json` checks 139 saved fields for this
+leaf and 58 distinct lineage manifests across the two reviewed leaves.
+This completes the first exam's negative replies, not its remaining
+positive replies or every possible answer combination.
+
 Returning to Hom with the diploma (`cb-hom-oddland-v1`) earns the scrambler
 and completes Jerry's black-hole call, followed by Cyberion's third message.
 The save has `G1 = 2`, the scrambler aboard, and the Ark's location at Oddland.

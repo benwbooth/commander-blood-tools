@@ -1,0 +1,48 @@
+# The first exam's wrong-answer branch reaches all 32 authored questions.
+# One wrong visible choice per question suffices for each shared failure reply.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 86
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose proxima
+choose gluxx
+choose two
+choose emasculator
+choose beauregard
+choose izwal
+choose eviscerator
+choose pagos_tagos
+choose lord_krater
+choose two
+choose qx20
+choose strum
+choose klakos
+choose erazor
+choose vivisection
+choose big_bang
+choose tina_burner
+choose inquisitor
+choose los_demonios
+choose van_ish
+choose lord_raptor
+choose sebasto_paul
+choose joy_stica
+choose space_maker
+choose otto_von_smile
+choose torka
+choose frozen_migrata
+choose nobody
+choose rondo
+choose pterra
+choose ex897
+choose five
+wait 1000
