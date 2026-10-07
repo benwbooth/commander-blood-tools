@@ -1571,6 +1571,19 @@ fresh funded Mamy loan and interest, and Trump bionium retry. It does not
 promote excluded diagnostics or count closed-actor stale-pointer text.
 Both completeness flags remain false, and rendering has not started.
 
+`output/game-flows/audit-v18` rechecks 460 retained witnesses and excludes
+163 failed, running, legacy or review-rejected attempts under the same
+three-entry policy. CB has 1,569 successful-route and 1,646 other normal-route
+sites; BBB has 3,013 and 587. Other unobserved/dynamic sites remain 1,256 CB
+and 2,221 BBB, separately from repeated wording and control text. Since v17,
+143 additional CB and 36 BBB source sites are observed. This includes the
+Honk hints/topics, Hom contacts, five scheduled Ulikan calls, both ERO choices,
+and the three Bernie terminal alternatives described below. It excludes the
+then-running before-Bob and retained-ring-request captures. Retained open-menu
+witnesses are not promoted to save checkpoints. Both completeness flags stay
+false; this is a native observation ledger, not original whole-scene parity
+or a completed edit list. All 64 flow/catalog/coverage tests pass.
+
 The subsequent Honk hint slice uses earned saves with three bionium and
 ordinary bridge contacts. `cb-honk-chapter3-hint-v2`, from the failed exam,
 presents the Beauregard cryobox hint and its cost warning at COD 31486/31512.
@@ -1813,7 +1826,20 @@ VAR words; only `ti` and Ulikan's encounter count change three to four.
 The 34,845-boundary capture has 124 events and fifteen full sites including
 startup. Its closed frame-34709 save is
 `d1d0c4a20b0ebf549d0cc2de1e87b84d9ef88e6837a2ab591b195f48060732bf`.
-The fifth call and original whole-scene timing remain unverified.
+Original whole-scene timing remains unverified.
+
+`cb-ulikan-chapter2-fifth-call-v1` waits normally from the fourth save and
+answers the fifth queued call. The same timer-12 value queues Ulikan at
+frame 30173; only `ti` and his encounter count change four to five across
+all 2,441 saved VAR words. Eight SCRIPT2 sites fully match, including the
+240,000-baud connection and the Hom message at 15297. No time-of-day signoff
+is published in this capture; an unwitnessed signoff is not added by inference.
+The review checks 27 manifests, 164 saved fields and the actual phone input.
+It has 34,845 boundaries, 103 events and ten full sites including startup,
+with the closed frame-34709 save
+`ba9c5b711b1525bebee50b6cf6a4b0612fe21b4b4da9dd86b75e072d23af1dbd`.
+All five scheduled call counters are now witnessed through ordinary inputs;
+other date/time alternatives and original scene timing remain separate work.
 
 `cb-optional-hom-chapter5-remaining-v1` continues the earned television-topic
 save. The actual third cryobox row names Hom, record nine, with Yoko still
