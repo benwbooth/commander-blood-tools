@@ -1,0 +1,20 @@
+# Take the ordinary first-visit scrambler offer, then its displayed topics.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 42 37
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose use
+choose planet
+choose information
+choose races
+choose bye_bye
+wait 350

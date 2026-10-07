@@ -1194,6 +1194,27 @@ proven native defect: the original might also erase the line before display.
 This retry also spans numeric-pool and scene fixes, not an isolated scene-fix
 comparison. No interest follow-up is based on either unverified save.
 
+The subsequent bounded original watch in
+`output/diagnostics/mamy-original-funded-watch-v1` resolves the thank-you's
+acceptance/display distinction on that earned funded branch. Normal original
+LOAD and medicine-before-decoder gifts reach evolution 120 and two credits.
+One actual lend publishes COD 26221's source pointer at EXE `0x6E43`, after
+the debit to one credit. C9 then clears the presentation actions; the
+post-scan writers `0x5F7B`/`0x5F89` clear text-active/request **before** the
+profile loader. Profile reset clears the deferred-menu state. Continuous
+post-publication watches find no intervening inline-renderer entry; the first
+later entry/return takes the menu-zero/hold-zero path without a font call.
+All 490 full hit snapshots were checked against original instruction bytes.
+This supports original suppression before inline drawing on this branch,
+not a generic text-yield or deferred-profile repair. The synchronous stops
+perturb timing; neither VGA scanout nor uninstrumented frame timing was
+measured. The report's SHA-256 is
+`799bd4138bcbbe6cae03dbd63e0b139118088a92fe2f25c065d947a5f7211121`.
+One unarmed prewatch guard retry is retained. Debug registers were restored,
+the original child exited, and all 160 frozen inputs remained unchanged.
+This diagnostic does not itself promote the two excluded native loans or
+provide an accepted interest predecessor; a fresh native review is separate.
+
 Two Metagluk alternatives use the earned optics-rejection save, before Super
 Zen exists. `bbb-optional-metagluk-other-command-v1` buys the displayed
 `bionium` command, adding SCRIPT2 COD 16224/16238/16254/16266. Its 5,018
@@ -1310,6 +1331,31 @@ The 61-manifest review checks 121 saved fields and all eight selected menu
 rows. Globals and actor/item ownership remain unchanged, with Maziok still
 on Magnu. Both reviews are in `cb-optional-followup-audit-v1`; neither claims
 original whole-scene parity or completion of all optional conversations.
+
+Two further leaves fork the earned `cb-oddland-crossing-v2` checkpoint:
+
+- `cb-optional-fifi-interrogation-v1` accepts the ordinary Mind Scrambler
+  offer on Ron and selects the displayed planet, information, and races
+  topics. All 24 conservatively attributed full sites match; BAS 953, 979,
+  and 1007 are new beyond `audit-v16`. Its 8,999 frames and 331 events end
+  with a closed slot-zero save at frame 8863, SHA-256
+  `16443463718172eadac4b1228a9de7b9ca7e9bcbfa4deffe76052a64dca54704`.
+- `cb-optional-maziok-wrong-greetings-v1` learns Magnu by refusing Fifi's
+  offer, then selects `hello` in Maziok's first and subsequent greeting
+  menus. The first reprimand adds eleven attributed sites; all 36 full
+  sites match. It records 20,857 frames and 566 events and saves at frame
+  20721, SHA-256
+  `b5e6d23acc655fc42a2689d8ab48757ce7c85900e0b752735c3158529608b8fb`.
+  Other non-`ga` labels share these source branches, not separate topics.
+
+`cb-fifi-maziok-menu-audit-v1` checks 48-manifest ancestry, 121 saved fields,
+current inputs, and actual menu rows for each. Globals, actor locations,
+and inventory ownership/flags remain unchanged; only ship/local navigation
+targets move. The audit separately retains matching closed-actor raster
+observations for Fifi's farewell and Maziok COD 4832/4944, including all 446
+expected pixels of the repeat refusal. The shared checker excludes these
+closed-actor attributions, so they are not added to the fourteen new-site
+total. Neither review changes that rule or claims original scene parity.
 
 `cb-optional-bob-good-root-guard-v2` separately selects the displayed root
 `good_` four times and leaves normally. Its 7,109 frames, 549 events, and

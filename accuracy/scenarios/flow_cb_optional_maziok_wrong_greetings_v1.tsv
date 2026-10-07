@@ -1,0 +1,40 @@
+# Learn Magnu through Fifi's ordinary scrambler refusal.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 42 37
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose refuse
+wait 500
+# The first wrong greeting triggers Maziok's explanation of the custom.
+park 4 0
+wait 25
+click 160 150
+wait 40
+click 77 49
+wait 40
+click 250 125
+wait 300
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose hello
+wait 1100
+# His next offered greeting has its own short refusal.
+park 4 0
+wait 25
+click 216 72
+wait 180
+click 80 88
+choose hello
+wait 500
