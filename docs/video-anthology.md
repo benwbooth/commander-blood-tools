@@ -1669,6 +1669,28 @@ checkpoint. The initial Yoko v1 run was stopped when this omission was found;
 its incomplete inputs are retained as failed evidence. Neither is a v2
 predecessor. Remaining hints still require different naturally earned states.
 
+`cb-yoko-before-rondo-v1` earns one such state from Hom's root-politics
+checkpoint. The actual ten-row cryobox roster places Yoko fourth; the normal
+contact displays COD 7875 and 7919, leaves him aboard away from Rondo, and
+retains all three bionium. These two lines were already covered. Across all
+2,504 saved VAR words, only Yoko's encounter count changes zero to one.
+The 5,364-boundary capture has 100 events and saves at frame 5228 with hash
+`427a9beefcdb0c069b89bb311fb8cecc3c22ce1eae61e92d8c16e687a3326496`.
+Kran Dobu's pending call is inherited unchanged, not created or answered here.
+
+`cb-honk-chapter5-rondo-hint-v1` resumes that save and selects Honk normally.
+The saved guards bypass the earlier Hom, Migrator and first-Yoko hints, then
+select COD 20755, the reminder to approach Rondo and teleport Yoko/Maxxon.
+It spends three bionium once, closes through the actual farewell row and
+saves at frame 4306 of 4,442 with hash
+`98db6cb3d1da6a5b27d0fe25ac6432c8ed8c5a0246144853dd23cd946c6787d6`.
+Its 115 events include ten full matched sites; only the reminder is new
+beyond the other SCRIPT5 hints. The paired `cb-yoko-before-rondo-review-v1`
+checks 73/74 lineages, 108 summarized save fields each, both complete VAR
+arrays, the roster and source-ordered guards. The hint changes only Honk's
+encounter/topic words and bionium; inventory and the pending phone call are
+preserved. No clock, timer or saved value was injected.
+
 The later `cb-honk-chapter5-remaining-topics-v1/v2/v3` attempts exposed a
 subtitle drawing defect at BAS 8086, not an unavailable normal topic. Its
 authored line extends beyond column 319. `commander_subtitle_edge_oracle.py`
@@ -2167,6 +2189,38 @@ requested credit, and chooses `don't_cheat` at the password prompt. Trump's
 spy warning then completes. The saved checkpoint has `C7=5`, `B82=0`,
 `A86=2`, and seven credits. The earlier v1 stopped at the password prompt and
 has no new saved checkpoint; it is not used as a predecessor.
+
+Three independent terminal alternatives now use the same earned
+`bbb-super-tromp-repair-v1` checkpoint:
+
+| Bernie Alternative | Final C7 | Boundaries | Events | Full Sites | New Sites |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `bbb-optional-bernie-mother-refusal-v2` | 1 | 5,088 | 204 | 20 | 6 |
+| `bbb-optional-bernie-yolk-affirmative-v2` | 2 | 6,276 | 291 | 33 | 10 |
+| `bbb-optional-bernie-credit-refusal-v2` | 3 | 7,138 | 305 | 35 | 2 |
+
+They select the actual `rather_die`, `no_problemo`, or credit-refusal `no`
+rows after their respective preceding choices. Each authored branch sets
+`A13=1`, assigning `31explonebul` at SCRIPT2 COD 40691 (`0x9EF3`). All seven
+videos decode and close in DESCRIPT order: `ppit01`, `pollup`, `star2`,
+`nebul3a`, `explo3`, `ppit05_3`, `ppit08`. Every requested choice completes;
+only the final passive wait is interrupted by the natural zero-status exit.
+These are game-over leaves, not successful endings or resumable checkpoints.
+No SAVE input is sent, no new checkpoint is claimed, and copied parent SAV
+files remain byte-identical. The old failed mother-refusal save attempt is
+preserved separately and supplies no ancestry.
+
+The sealed `bbb-bernie-endings-v2-audit-v1` and independent
+`bbb-bernie-endings-parent-review-v1` bind 700 artifacts, 923 frozen inputs,
+239 preserved earlier files and 63 combined manifests. All displayed text
+and nonempty dialogue rasters match. All 250 retained globals plus the
+nonserialized directory alias are checked; only C7/A13 change after LOAD.
+Eight credits, the zero cheat flag and every inventory holder/flag remain
+unchanged; ordinary population/energy changes and Internet's sixth encounter
+are recorded. The union adds eighteen source sites beyond `audit-v17`.
+This verifies ordinary terminal flows, not original whole-scene timing or
+per-glyph sequence-caption parity. Nothing has been rendered from them.
+
 `bbb-trump-spy-v1` follows that warning to Golgoland and solves Trump's
 three-letter identification puzzle. The next Internet call declines the
 optional password shortcut again and hears Tequila's invitation. The saved

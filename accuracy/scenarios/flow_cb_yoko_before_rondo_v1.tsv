@@ -1,0 +1,8 @@
+# Earn a Yoko encounter while still aboard and away from Rondo.
+# The earned ten-entry cryobox roster places Yoko in its fourth row.
+park 4 45
+wait 25
+click 230 124
+frames 600
+click 100 78
+frames 1600

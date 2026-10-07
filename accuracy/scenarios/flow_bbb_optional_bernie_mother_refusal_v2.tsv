@@ -1,0 +1,11 @@
+# Authored C7=1/A13=1 terminal branch; no post-ending save.
+park 4 45
+wait 25
+click 230 104
+frames 600
+click 100 94
+frames 1200
+choose of_course
+frames 900
+choose rather_die
+wait 2000

@@ -1,0 +1,13 @@
+# Authored C7=2/A13=1 Virtue League terminal branch; no post-ending save.
+park 4 45
+wait 25
+click 230 104
+frames 600
+click 100 94
+frames 1200
+choose never
+frames 900
+choose even_then
+frames 900
+choose no_problemo
+wait 2000
