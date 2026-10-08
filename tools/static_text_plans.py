@@ -17,13 +17,39 @@ from native_sequence_anthology import read_json, require
 from video_anthology import digest, save_json
 
 GAMES = {"cb": "commander_blood", "bbb": "big_bug_bang"}
+GAME_KEYS = {"cb": "cb", "bbb": "bbb"}
 # Built-in records queued by the bridge console's immediate choices; the native
 # binder checks the owner against the profile's named built-ins (DS:0x6754).
 CONSOLE_RECORDS = {"Honk": "horn", "menu": "radio"}
 
 
 
-def candidate(site, descriptions):
+def placement_records(site, locations, placements, location_names):
+    """DESCRIPT Location records (planet, place) where the actor stands.
+
+    CB: the source-default HOLDER_OR_LOCATION chain actor -> place -> planet (the field
+    native travel staging reads). BBB actors all start in Trashlando and are moved at
+    run time (D5 settlement), so only placements taken from verified native chapters apply.
+    """
+    actor = site["authored"].get("record_name")
+    chain = []
+    if site["game"] == "bbb":
+        chain = list(placements.get(actor, ())) if placements else []
+        if len(chain) == 2 and chain[0] == chain[1]:
+            chain = chain[:1]
+    elif locations:
+        rows = {row["name"]: row for row in locations[site["game"]][site["profile"]]}
+        row = rows.get(actor)
+        place = row["holder"] if row and row["kind"] == "Actor" else None
+        while place in rows and len(chain) < 3:
+            chain.insert(0, place)
+            if rows[place]["kind"] == "CelestialBody":
+                break
+            place = rows[place]["holder"]
+    return [name for name in chain if (site["game"], name) in location_names] if chain else []
+
+
+def candidate(site, descriptions, placement=()):
     authored = site["authored"]
     flags = authored["flags_b4"]
     # vm_op_a6_text (0x660C): b4&0x40 gates the line on the concept history matching
@@ -85,7 +111,9 @@ def candidate(site, descriptions):
                 source=site["kind"], text_site=site["offset"],
                 context=dict(kind="bridge_console", actor_offset=authored["record_offset"], choice=console)
                 if console else dict(kind="source_default", actor_offset=authored["record_offset"],
-                                     descript_records=[record["name"]]))
+                                     descript_records=[*placement, record["name"]]))
+    if placement and not console:
+        plan["title"] = plan["title"].replace("[prepared source-default", f"[prepared at {'/'.join(placement)}")
     if console:
         plan["title"] = plan["title"].replace(
             "[prepared source-default]",
@@ -107,7 +135,7 @@ def candidate(site, descriptions):
     return plan, None
 
 
-def build(inventory_path, output, game=None, selected_sites=()):
+def build(inventory_path, output, game=None, selected_sites=(), locations_path=None, placements_path=None):
     require(not output.exists(), f"output directory already exists: {output}")
     inventory_hash = digest(inventory_path)
     inventory = read_json(inventory_path)
@@ -117,9 +145,13 @@ def build(inventory_path, output, game=None, selected_sites=()):
     sites = [site for site in inventory["sites"] if game is None or site["game"] == game]
     selected = set(selected_sites)
     require(selected <= {site["id"] for site in sites}, "selected site is absent from the chosen inventory/game")
+    locations = read_json(locations_path) if locations_path else None
+    placements = read_json(placements_path)["placements"] if placements_path else None
+    location_names = {(GAME_KEYS[record["game"]] if record["game"] in GAME_KEYS else record["game"], record["authored"]["name"])
+                      for record in inventory["descriptions"] if record["authored"]["kind"] == "Location"}
     plans, ledger = [], []
     for site in sites:
-        plan, reason = candidate(site, descriptions)
+        plan, reason = candidate(site, descriptions, placement_records(site, locations, placements, location_names))
         status = "deferred" if reason else "eligible_not_selected" if selected and site["id"] not in selected else "planned"
         entry = dict(id=site["id"], status=status, reason=reason)
         if status == "planned":
@@ -151,8 +183,10 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--game", choices=tuple(GAMES))
     parser.add_argument("--site", action="append", default=[])
+    parser.add_argument("--locations", type=Path, help="source-default holder chains (dump_source_default_object_locations)")
+    parser.add_argument("--placements", type=Path, help="BBB actor placements taken from verified native chapters")
     args = parser.parse_args()
-    build(args.inventory, args.out, args.game, args.site)
+    build(args.inventory, args.out, args.game, args.site, args.locations, args.placements)
 
 
 if __name__ == "__main__":

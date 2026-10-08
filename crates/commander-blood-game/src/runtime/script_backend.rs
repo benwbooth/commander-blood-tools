@@ -2114,6 +2114,78 @@ mod tests {
         }
     }
 
+    /// Dump each profile's source-default holder chain (actor -> location -> planet) as JSON.
+    /// `HOLDER_OR_LOCATION` is the field native travel staging reads (contact_scenario.rs).
+    #[test]
+    #[ignore = "requires both imported game asset stores and OBJECT_LOCATIONS_OUT"]
+    fn dump_source_default_object_locations() {
+        use commander_blood_formats::script::ScriptStateObjectReference;
+        let out = std::env::var("OBJECT_LOCATIONS_OUT").expect("OBJECT_LOCATIONS_OUT");
+        let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let mut games = serde_json::Map::new();
+        for (game, paths) in [
+            ("cb", original_data_paths().expect("CB assets required")),
+            (
+                "bbb",
+                OriginalGameDataPaths::from_root(root.join("output/big-bug-bang/imported-assets"))
+                    .unwrap(),
+            ),
+        ] {
+            let writable = TemporaryRoot::create();
+            let data = OriginalGameData::load_with_writable_root(paths, &writable.0).unwrap();
+            let dialect = data.game().script_dialect();
+            let mut runtime = OriginalGameRuntime::new(data);
+            let mut scripts = RuntimeScriptSystem::new(runtime.data(), TEST_CLOCK);
+            let mut profiles = serde_json::Map::new();
+            for number in 0..32u8 {
+                let Some(id) = ScriptProfileId::new_for_dialect(number, dialect) else {
+                    break;
+                };
+                scripts.load_profile(&mut runtime, id).unwrap();
+                if let Ok(frames) = std::env::var("OBJECT_LOCATIONS_FRAMES") {
+                    // Let the profile's own scripts (including BBB's D5 settlement) run.
+                    let mut lifecycle = GameLifecycleState::default();
+                    for _ in 0..frames.parse::<u32>().unwrap() {
+                        scripts
+                            .execute_lifecycle_frame(&mut runtime, &mut lifecycle, true)
+                            .unwrap();
+                    }
+                }
+                let profile = runtime.current_profile().unwrap();
+                let name = |object| {
+                    profile
+                        .directory()
+                        .object(object)
+                        .map(|entry| String::from_utf8_lossy(entry.name()).into_owned())
+                };
+                let mut rows = Vec::new();
+                for object in profile.state().objects() {
+                    let Some(offset) = crate::native::bloodprg::script_field_offset(
+                        object.kind,
+                        crate::native::bloodprg::ScriptFieldSelector::HOLDER_OR_LOCATION,
+                    ) else {
+                        continue;
+                    };
+                    let holder = profile
+                        .state()
+                        .object_word(object.id, offset / 2)
+                        .and_then(|word| profile.state().object_reference(word))
+                        .map(|reference| match reference {
+                            ScriptStateObjectReference::Object(id) => name(id),
+                            _ => None,
+                        });
+                    rows.push(serde_json::json!({
+                        "name": name(object.id), "kind": format!("{:?}", object.kind),
+                        "holder": holder.flatten(),
+                    }));
+                }
+                profiles.insert(format!("SCRIPT{}", number + 1), serde_json::Value::Array(rows));
+            }
+            games.insert(game.to_owned(), serde_json::Value::Object(profiles));
+        }
+        std::fs::write(out, serde_json::to_vec_pretty(&games).unwrap()).unwrap();
+    }
+
     #[test]
     #[ignore = "requires both imported game asset stores"]
     fn static_text_freeze_preserves_state_even_when_vm_is_enabled() {
