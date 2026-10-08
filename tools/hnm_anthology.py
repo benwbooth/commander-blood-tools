@@ -71,11 +71,53 @@ def period(name):
     return PERIOD.get(name.split("/")[0], 0.068)
 
 
+def capture_index(assets_game, manifests):
+    """video name -> (seconds, capture directory, start_ns) of its longest native playback.
+
+    Intervals come from the engine's own verified chapter captures, whose audio.f32le is
+    the game mix (music, voices, effects) aligned with native-state time.
+    """
+    from native_capture_storage import open_trace
+    best = {}
+    for manifest in manifests:
+        for source in read_json(manifest)["sources"]:
+            path = Path(source["path"])
+            try:
+                with open_trace(path / "native-state.jsonl") as stream:
+                    rows = [(json.loads(line)) for line in stream]
+            except OSError:
+                continue
+            current, start, last = None, 0, 0
+            for row in rows + [None]:
+                resource = row["state"]["video"]["active_resource"] if row else None
+                now = row["time_ns"] if row else last
+                if row is None or resource != current:
+                    if current and now - start > best.get(current, (0,))[0]:
+                        best[current] = (now - start, path, start)
+                    current, start = resource, now
+                last = now
+    return {resource_name(k): v for k, v in best.items()}
+
+
+def captured_track(entry, seconds, target):
+    """Write `seconds` of the captured game mix starting where the clip began."""
+    length, path, start = entry
+    samples = int(seconds * 48000)
+    with open(path / "audio.f32le", "rb") as stream:
+        stream.seek(int(start * 48000 / 1e9) * 4)
+        data = stream.read(samples * 4)
+    data += bytes(samples * 4 - len(data))
+    target.write_bytes(data)
+    return target
+
+
 def transcode(source, mask, target, frames, rate, music, frame_period):
     duration = frames * frame_period
     stretch = frame_period * rate
     audio = ["-f", "lavfi", "-t", f"{duration:.6f}", "-i", "anullsrc=r=48000:cl=mono"]
-    if music is not None:
+    if isinstance(music, Path):
+        audio = ["-f", "f32le", "-ar", "48000", "-ac", "1", "-i", str(music)]
+    elif music is not None:
         path, offset, looped = music
         audio = (["-stream_loop", "-1"] if looped else []) + ["-ss", f"{offset:.6f}", "-i", str(path)]
     graph = ("[1:v]format=gray[m];[0:v]format=gbrp[v];"
@@ -89,7 +131,7 @@ def transcode(source, mask, target, frames, rate, music, frame_period):
          str(target)], check=True)
 
 
-def build(assets, catalog_path, inventory_path, clip_dirs, out):
+def build(assets, catalog_path, inventory_path, clip_dirs, capture_manifests, out):
     require(not out.exists(), f"output already exists: {out}")
     catalog = read_json(catalog_path)
     manifest, manifest_hash = inventory(assets)
@@ -114,7 +156,8 @@ def build(assets, catalog_path, inventory_path, clip_dirs, out):
     out.mkdir(parents=True)
     parts, chapters, start = [], [";FFMETADATA1"], 0
     missing_music = set()
-    native_clips = 0
+    native_clips = captured_audio = 0
+    captures = capture_index(game, [Path(m) for m in capture_manifests])
     for index, video in enumerate(videos):
         entry = by_name[video["name"]]
         require(entry["source_sha256"] == video["sha256"], f"derivative is stale: {video['name']}")
@@ -136,11 +179,31 @@ def build(assets, catalog_path, inventory_path, clip_dirs, out):
                 require(digest(wav_path) == wav["sha256"], f"music derivative changed: {resource}")
                 track = (wav_path, offset, looped)
         clip = clips.get(video["name"])
+        capture = captures.get(video["name"])
         if clip is not None:
             require(digest(Path(clip["path"]) / "master.mkv") == clip["master_sha256"], f"clip changed: {video['name']}")
-            part = Path(clip["path"]) / "master.mkv"
             length = round(clip["duration_ns"])
             native_clips += 1
+            if capture is not None:
+                # Keep the native clip render's picture; lay the captured game audio under it.
+                raw = captured_track(capture, length / 1e9, out / "parts" / f"{index:04d}.f32le")
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(Path(clip["path"]) / "master.mkv"),
+                                "-f", "f32le", "-ar", "48000", "-ac", "1", "-i", str(raw),
+                                "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "pcm_f32le", "-shortest", str(part)],
+                               check=True)
+                raw.unlink()
+                captured_audio += 1
+            else:
+                part = Path(clip["path"]) / "master.mkv"
+        elif capture is not None:
+            mask = video_dir / entry["mask_webm_path"]
+            require(digest(mask) == entry["mask_webm_sha256"], f"mask derivative changed: {video['name']}")
+            seconds = entry["frame_count"] * period(video["name"])
+            raw = captured_track(capture, seconds, out / "parts" / f"{index:04d}.f32le")
+            transcode(webm, mask, part, entry["frame_count"], rate[0], raw, period(video["name"]))
+            raw.unlink()
+            length = round(seconds * 1e9)
+            captured_audio += 1
         else:
             mask = video_dir / entry["mask_webm_path"]
             require(digest(mask) == entry["mask_webm_sha256"], f"mask derivative changed: {video['name']}")
@@ -163,7 +226,8 @@ def build(assets, catalog_path, inventory_path, clip_dirs, out):
     require(abs(duration - start / 1e9) < 1.0 + 0.001 * len(parts), "stitched duration differs from the frame census")
     save_json(out / "manifest.json", dict(
         schema=1, game=manifest.get("game", "commander_blood"), scope="every HNM video, masked per frame, record music where authored",
-        asset_manifest_sha256=manifest_hash, native_clip_renders=native_clips, videos_with_music=sum(1 for v in videos if v["name"] in music and not all(
+        asset_manifest_sha256=manifest_hash, native_clip_renders=native_clips,
+        videos_with_captured_game_audio=captured_audio, videos_with_music=sum(1 for v in videos if v["name"] in music and not all(
             m in missing_music for m in [music[v["name"]][0]])), music_missing_from_archive=sorted(missing_music), catalog_sha256=digest(catalog_path), videos=len(videos),
         frames=sum(by_name[v["name"]]["frame_count"] for v in videos), duration_s=duration,
         master=master.name, master_sha256=digest(master), tool_sha256=digest(__file__),
@@ -181,9 +245,11 @@ def main():
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--clips", type=Path, action="append", default=[],
                         help="directory of hnm_clips_render shard directories")
+    parser.add_argument("--captures", type=Path, action="append", default=[],
+                        help="anthology manifest whose source chapters carry native-state and audio captures")
     parser.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
-    build(args.assets.resolve(), args.catalog, args.inventory, args.clips, args.out)
+    build(args.assets.resolve(), args.catalog, args.inventory, args.clips, args.captures, args.out)
 
 
 if __name__ == "__main__":
