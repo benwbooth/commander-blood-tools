@@ -55,7 +55,7 @@ def music_plan(inventory, game, durations):
             directory = DIRECTORIES.get(command["kind"])
             if directory is None:
                 continue
-            name = resource_name(f"{directory}/{command['normalized_name']}")
+            name = resource_name(f"{directory}/{command.get('normalized_name') or command['name']}")
             looped = record["authored"]["kind"] == "Location"
             plan.setdefault(name, (music, offset, looped))
             offset += durations.get(name, 0.0)
