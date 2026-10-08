@@ -34,6 +34,17 @@ pub(super) struct OfflineStaticTextPlan {
     pub source: StaticTextSource,
     pub text_site: usize,
     pub context: StaticTextContext,
+    /// Present this DESCRIPT presentation line (a talk, idle or scene clip) in the
+    /// prepared scene instead of publishing the text site, until `clip_frames`
+    /// frames of its video have decoded.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clip_line: Option<u16>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clip_frames: Option<u64>,
+    /// DESCRIPT records applied after the context, when the clip belongs to a character
+    /// that has no script text of its own (the scene actor stays the plan's actor).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub clip_records: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

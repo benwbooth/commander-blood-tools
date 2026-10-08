@@ -1235,6 +1235,70 @@ pub(super) fn capture_static_text(
         host.services_mut()
             .script_backend_mut()
             .observe_text_publications();
+        if let (Some(line), Some(expected_frames)) = (plan.clip_line, plan.clip_frames) {
+            for name in &plan.clip_records {
+                ensure!(
+                    host.services_mut()
+                        .apply_presentation_description(name.as_bytes())?
+                        .is_some(),
+                    "clip DESCRIPT record is absent: {name}"
+                );
+            }
+            // Clip mode: present one presentation line over the prepared scene, as the
+            // ship scene dispatcher does for a talk or idle clip, and stop once its
+            // video has decoded every frame and stalled.
+            // The main loop maps the signed text selector to the shared presentation line
+            // (presentation_line_for_text_selector) once a text menu is
+            // pending, which is how an A6 line selects its talk clip.
+            lifecycle.presentation.text_selector = Some(
+                i8::try_from(i32::from(line) - i32::from(crate::native::bloodprg::presentation_line_for_text_selector(0)))
+                    .context("clip line is outside the selector range")?,
+            );
+            lifecycle.presentation.text_menu_pending = true;
+            lifecycle.presentation.request_flags = crate::native::bloodprg::PresentationRequestFlags::decode(
+                lifecycle.presentation.request_flags.bits() | 1, // TEXT_REQUEST_PENDING
+            );
+            let before_clip = host.services().semantic_trace_snapshot(&lifecycle)?;
+            host.platform_mut().begin_capture();
+            let (mut decoded, mut stalled, mut resource) = (0u64, 0u32, serde_json::Value::Null);
+            for frame in 1..=max_frames {
+                ensure!(
+                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    "native lifecycle exited during the clip"
+                );
+                let snapshot = host.services().semantic_trace_snapshot(&lifecycle)?;
+                let count = snapshot["video"]["decoded_frame_count"].as_u64().unwrap_or(0);
+                if count > decoded {
+                    decoded = count;
+                    stalled = 0;
+                    resource = snapshot["video"]["active_resource"].clone();
+                } else {
+                    stalled += 1;
+                }
+                if decoded > 0 && (decoded + 1 >= expected_frames && stalled >= 1 || stalled >= 90) {
+                    let driver = host.platform();
+                    return Ok((
+                        serde_json::json!({
+                            "plan": plan, "authored": bound.authored,
+                            "completion": "isolated_clip_played", "story_execution": "frozen",
+                            "gameplay_reachability": "not_assessed", "natural_chapter_close": false,
+                            "clip": {"line": line, "expected_frames": expected_frames,
+                                "decoded_frames": decoded, "resource": resource},
+                            "presented_frames": driver.captured_waits,
+                            "duration_ns": driver.elapsed_ns - driver.capture_origin_ns,
+                            "audio_samples": driver.sample_cursor - driver.capture_origin_sample,
+                            "main_loop_frames": frame, "bootstrap_duration_ns": driver.capture_origin_ns,
+                            "total_timer_ticks": driver.timer_ticks,
+                            "preparation": {"before": before_preparation, "before_clip": before_clip,
+                                "actor_records": actor_preparation,
+                                "source_var_sha256": sha256(&source_var)},
+                        }),
+                        host.services().read_offline_rgba()?,
+                    ));
+                }
+            }
+            bail!("clip did not finish within the frame cap");
+        }
         let a6 = host
             .services_mut()
             .publish_static_text(&mut lifecycle, plan, &bound)?;
