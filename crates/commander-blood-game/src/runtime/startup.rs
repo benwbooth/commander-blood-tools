@@ -231,9 +231,11 @@ mod tests {
 
         let outcome = runtime
             .prepare_startup_resources(&VGA_BIOS_FONT_8X8, |frame, palette| {
-                assert!(unique_names
-                    .iter()
-                    .all(|name| !startup_writable_path(&writable_path, name).exists()));
+                assert!(
+                    unique_names
+                        .iter()
+                        .all(|name| !startup_writable_path(&writable_path, name).exists())
+                );
                 presented_loading_frame = Some((frame.clone(), *palette));
                 Ok(())
             })

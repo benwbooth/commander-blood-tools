@@ -3723,6 +3723,11 @@ impl<'window> ModernGameServices<'window> {
         Ok(())
     }
 
+    /// Select the script-requested (A8) sequence clip for presentation line seven.
+    pub(super) fn select_script_sequence_clip(&mut self, basename: &[u8]) -> Result<()> {
+        self.presentation_player.select_script_sequence_video(basename)
+    }
+
     /// Select one authored clip from the active DESCRIPT sequence record.
     pub fn select_descript_sequence_video(&mut self, basename: &[u8]) -> Result<()> {
         self.presentation_player

@@ -1247,6 +1247,12 @@ pub(super) fn capture_static_text(
             // Clip mode: present one presentation line over the prepared scene, as the
             // ship scene dispatcher does for a talk or idle clip, and stop once its
             // video has decoded every frame and stalled.
+            if let Some(offset) = plan.clip_vertical_offset {
+                host.services_mut().set_ship_navigation_scene_vertical_offset(offset);
+            }
+            if let Some(basename) = &plan.clip_sequence {
+                host.services_mut().select_script_sequence_clip(basename.as_bytes())?;
+            }
             // The main loop maps the signed text selector to the shared presentation line
             // (presentation_line_for_text_selector) once a text menu is
             // pending, which is how an A6 line selects its talk clip.

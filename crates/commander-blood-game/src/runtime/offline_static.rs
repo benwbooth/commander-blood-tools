@@ -45,6 +45,13 @@ pub(super) struct OfflineStaticTextPlan {
     /// that has no script text of its own (the scene actor stays the plan's actor).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub clip_records: Vec<String>,
+    /// Script-requested sequence (A8) to present on line 7 instead of a character clip.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clip_sequence: Option<String>,
+    /// Scene row the sequence line presents from, for full-height clips that the
+    /// context's location row (e.g. 78) would push off the 200-row screen.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clip_vertical_offset: Option<u16>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

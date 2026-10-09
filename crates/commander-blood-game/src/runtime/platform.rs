@@ -268,7 +268,7 @@ impl<'window> RuntimePlatformHost<'window> {
         self.frame_clock.begin_frame(Instant::now());
         let mut platform_shutdown = self.pump_events(services);
         if let Some(scenario) = self.scenario.as_mut() {
-            let input = scenario.advance(None, RuntimeScenarioCadence::BlockingPresentation)?;
+            let input = scenario.advance(None, RuntimeScenarioCadence::AlienOverlay)?;
             platform_shutdown |= input.request_shutdown;
             self.apply_alien_scenario_input(services, input)?;
         }
@@ -337,11 +337,14 @@ impl<'window> RuntimePlatformHost<'window> {
         if input.trigger_alien_overlay {
             services.trigger_alien_overlay_for_scenario()?;
         }
-        self.pointer_buttons = if input.primary_pressed {
-            PointerButtons::from_bits(PointerButton::Primary as u16)
-        } else {
-            PointerButtons::NONE
-        };
+        let mut pointer_buttons = u16::MIN;
+        if input.primary_pressed {
+            pointer_buttons |= PointerButton::Primary as u16;
+        }
+        if input.secondary_pressed {
+            pointer_buttons |= PointerButton::Secondary as u16;
+        }
+        self.pointer_buttons = PointerButtons::from_bits(pointer_buttons);
         if let Some(key) = input.key {
             queue_scenario_key(services, key);
         }
@@ -700,7 +703,9 @@ fn queue_scenario_key(services: &mut ModernGameServices<'_>, key: RuntimeScenari
             services.input_mut().queue_text(&character.to_string());
         }
         RuntimeScenarioKey::F7 => {
-            services.input_mut().queue_keycode(sdl3::keyboard::Keycode::F7);
+            services
+                .input_mut()
+                .queue_keycode(sdl3::keyboard::Keycode::F7);
         }
         RuntimeScenarioKey::Enter => {
             services

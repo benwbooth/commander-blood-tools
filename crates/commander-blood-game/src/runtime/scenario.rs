@@ -31,17 +31,29 @@ const PRESENTATION_FALLBACK_FRAMES_PER_WAIT_UNIT: u16 = 2;
 /// that semantic loop cadence; the native PIT low word is not a game-frame count.
 const GAME_FRAMES_PER_TWO_ORACLE_WAIT_UNITS: u32 = 9;
 const ORACLE_WAIT_UNIT_PAIR: u32 = 2;
+const ALIEN_DRIVE_POINTER_DWELL_FRAMES: u16 = 25;
+const ALIEN_DRIVE_POINTER_PATH: [[i16; 2]; 5] = [
+    [i16::MIN, i16::MIN],
+    [LOGICAL_SCREEN_WIDTH - 1, i16::MIN],
+    [LOGICAL_SCREEN_WIDTH - 1, LOGICAL_SCREEN_HEIGHT - 1],
+    [i16::MIN, LOGICAL_SCREEN_HEIGHT - 1],
+    [LOGICAL_SCREEN_WIDTH / 2, LOGICAL_SCREEN_HEIGHT / 2],
+];
+const ALIEN_DRIVE_PRIMARY_BUTTON_PERIOD: u16 = 4;
+const ALIEN_DRIVE_SECONDARY_BUTTON_PERIOD: u16 = 7;
+const ALIEN_DRIVE_KEY_PERIOD: u16 = 3;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RuntimeScenarioCadence {
     BlockingPresentation,
+    AlienOverlay,
     GameLoop,
 }
 
 impl RuntimeScenarioCadence {
     const fn frame_count(self, wait_units: u16) -> u16 {
         match self {
-            Self::BlockingPresentation => {
+            Self::BlockingPresentation | Self::AlienOverlay => {
                 wait_units.saturating_mul(PRESENTATION_FALLBACK_FRAMES_PER_WAIT_UNIT)
             }
             Self::GameLoop => {
@@ -77,6 +89,7 @@ pub(super) struct RuntimeScenarioFrameInput {
     pub pointer_position: Option<[i16; 2]>,
     pub relative_pointer_motion: Option<[i32; 2]>,
     pub primary_pressed: bool,
+    pub secondary_pressed: bool,
     pub key: Option<RuntimeScenarioKey>,
     pub teleport_target: Option<Box<[u8]>>,
     pub contact_procedure_offset: Option<usize>,
@@ -116,6 +129,10 @@ enum RuntimeScenarioActionKind {
     Teleport {
         target: Box<[u8]>,
     },
+    DriveAlienOverlay {
+        frames: u16,
+    },
+    AwaitAlienOverlay,
     TriggerAlienOverlay,
 }
 
@@ -247,7 +264,7 @@ impl RuntimeScenarioDriver {
             RuntimeScenarioCadence::GameLoop => {
                 self.game_frame_count = self.game_frame_count.wrapping_add(1);
             }
-            RuntimeScenarioCadence::BlockingPresentation => {
+            RuntimeScenarioCadence::BlockingPresentation | RuntimeScenarioCadence::AlienOverlay => {
                 self.presentation_frame_count = self.presentation_frame_count.wrapping_add(1);
             }
         }
@@ -330,6 +347,27 @@ impl RuntimeScenarioDriver {
             RuntimeScenarioActionKind::Teleport { target } => {
                 input.teleport_target = Some(target.clone());
                 true
+            }
+            RuntimeScenarioActionKind::DriveAlienOverlay { frames } => {
+                if cadence != RuntimeScenarioCadence::AlienOverlay {
+                    bail!("alien-drive action requires an active alien overlay");
+                }
+                let frame = self.action_frame + 1;
+                let pointer_index = usize::from((frame - 1) / ALIEN_DRIVE_POINTER_DWELL_FRAMES)
+                    % ALIEN_DRIVE_POINTER_PATH.len();
+                input.pointer_position = Some(ALIEN_DRIVE_POINTER_PATH[pointer_index]);
+                input.primary_pressed = frame.is_multiple_of(ALIEN_DRIVE_PRIMARY_BUTTON_PERIOD);
+                input.secondary_pressed = !input.primary_pressed
+                    && frame.is_multiple_of(ALIEN_DRIVE_SECONDARY_BUTTON_PERIOD);
+                input.key = Some(match frame % ALIEN_DRIVE_KEY_PERIOD {
+                    0 => RuntimeScenarioKey::ArrowUp,
+                    1 => RuntimeScenarioKey::ArrowDown,
+                    _ => RuntimeScenarioKey::Space,
+                });
+                frame >= *frames
+            }
+            RuntimeScenarioActionKind::AwaitAlienOverlay => {
+                cadence == RuntimeScenarioCadence::AlienOverlay
             }
             RuntimeScenarioActionKind::TriggerAlienOverlay => {
                 input.trigger_alien_overlay = true;
@@ -551,6 +589,24 @@ fn parse_action(line: &str, path: &Path, line_number: usize) -> Result<RuntimeSc
                 target: Box::from(fields[1].as_bytes()),
             }
         }
+        Some("alien-drive") => {
+            if fields.len() != 2 {
+                return Err(fail("alien-drive action requires one frame count"));
+            }
+            let frames = fields[1]
+                .parse::<u16>()
+                .map_err(|_| fail("invalid alien-drive frame count"))?;
+            if frames == u16::MIN {
+                return Err(fail("alien-drive frame count must be positive"));
+            }
+            RuntimeScenarioActionKind::DriveAlienOverlay { frames }
+        }
+        Some("await-alien") => {
+            if fields.len() != 1 {
+                return Err(fail("await-alien action takes no arguments"));
+            }
+            RuntimeScenarioActionKind::AwaitAlienOverlay
+        }
         Some("alien") => {
             if fields.len() != 1 {
                 return Err(fail("alien action takes no arguments"));
@@ -715,7 +771,7 @@ mod tests {
 
         for frame in u16::MIN..CLICK_FRAME_COUNT {
             let input = driver
-                .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+                .advance(None, RuntimeScenarioCadence::AlienOverlay)
                 .unwrap();
             assert_eq!(input.pointer_position, Some([125, 118]));
             assert_eq!(input.primary_pressed, frame == u16::MIN);
@@ -767,6 +823,127 @@ mod tests {
     fn alien_action_requests_the_next_recovered_round_robin_overlay() {
         let action = parse_action("alien", Path::new("scenario.tsv"), 5).unwrap();
         assert_eq!(action.kind, RuntimeScenarioActionKind::TriggerAlienOverlay);
+    }
+
+    #[test]
+    fn alien_drive_emits_the_recovered_stress_pattern_only_inside_an_overlay() {
+        const TEST_FRAME_COUNT: u16 =
+            ALIEN_DRIVE_POINTER_DWELL_FRAMES * ALIEN_DRIVE_POINTER_PATH.len() as u16;
+
+        let source = format!("alien-drive {TEST_FRAME_COUNT}");
+        let action = parse_action(&source, Path::new("scenario.tsv"), 6).unwrap();
+        assert_eq!(
+            action.kind,
+            RuntimeScenarioActionKind::DriveAlienOverlay {
+                frames: TEST_FRAME_COUNT,
+            }
+        );
+        let trace_path = std::env::temp_dir().join(format!(
+            "commander-blood-alien-drive-{}-{}.jsonl",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("alien-drive")
+        ));
+        let mut driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action.clone()],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: usize::MIN,
+            action_frame: u16::MIN,
+            pending_trace: Vec::new(),
+            initial_trace_written: false,
+            frame_count: u64::MIN,
+            game_frame_count: u64::MIN,
+            presentation_frame_count: u64::MIN,
+        };
+
+        for frame in 1..=TEST_FRAME_COUNT {
+            let input = driver
+                .advance(None, RuntimeScenarioCadence::AlienOverlay)
+                .unwrap();
+            let pointer_index = usize::from((frame - 1) / ALIEN_DRIVE_POINTER_DWELL_FRAMES)
+                % ALIEN_DRIVE_POINTER_PATH.len();
+            assert_eq!(
+                input.pointer_position,
+                Some(ALIEN_DRIVE_POINTER_PATH[pointer_index])
+            );
+            assert_eq!(
+                input.primary_pressed,
+                frame.is_multiple_of(ALIEN_DRIVE_PRIMARY_BUTTON_PERIOD)
+            );
+            assert_eq!(
+                input.secondary_pressed,
+                !input.primary_pressed && frame.is_multiple_of(ALIEN_DRIVE_SECONDARY_BUTTON_PERIOD)
+            );
+            assert_eq!(
+                input.key,
+                Some(match frame % ALIEN_DRIVE_KEY_PERIOD {
+                    0 => RuntimeScenarioKey::ArrowUp,
+                    1 => RuntimeScenarioKey::ArrowDown,
+                    _ => RuntimeScenarioKey::Space,
+                })
+            );
+        }
+        assert_eq!(driver.action_index, 1);
+        assert_eq!(driver.presentation_frame_count, u64::from(TEST_FRAME_COUNT));
+
+        let mut game_loop_driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: usize::MIN,
+            action_frame: u16::MIN,
+            pending_trace: Vec::new(),
+            initial_trace_written: false,
+            frame_count: u64::MIN,
+            game_frame_count: u64::MIN,
+            presentation_frame_count: u64::MIN,
+        };
+        assert!(
+            game_loop_driver
+                .advance(None, RuntimeScenarioCadence::GameLoop)
+                .unwrap_err()
+                .to_string()
+                .contains("active alien overlay")
+        );
+        assert!(parse_action("alien-drive 0", Path::new("scenario.tsv"), 7).is_err());
+        let _ = std::fs::remove_file(trace_path);
+    }
+
+    #[test]
+    fn await_alien_ignores_other_clocks_and_completes_on_the_first_xdb_frame() {
+        let action = parse_action("await-alien", Path::new("scenario.tsv"), 8).unwrap();
+        assert_eq!(action.kind, RuntimeScenarioActionKind::AwaitAlienOverlay);
+        let trace_path = std::env::temp_dir().join(format!(
+            "commander-blood-await-alien-{}-{}.jsonl",
+            std::process::id(),
+            std::thread::current().name().unwrap_or("await-alien")
+        ));
+        let mut driver = RuntimeScenarioDriver {
+            scenario_path: PathBuf::from("scenario.tsv"),
+            actions: vec![action],
+            trace: BufWriter::new(File::create(&trace_path).unwrap()),
+            action_index: usize::MIN,
+            action_frame: u16::MIN,
+            pending_trace: Vec::new(),
+            initial_trace_written: false,
+            frame_count: u64::MIN,
+            game_frame_count: u64::MIN,
+            presentation_frame_count: u64::MIN,
+        };
+
+        driver
+            .advance(None, RuntimeScenarioCadence::GameLoop)
+            .unwrap();
+        driver
+            .advance(None, RuntimeScenarioCadence::BlockingPresentation)
+            .unwrap();
+        assert_eq!(driver.action_index, usize::MIN);
+        driver
+            .advance(None, RuntimeScenarioCadence::AlienOverlay)
+            .unwrap();
+        assert_eq!(driver.action_index, 1);
+        assert!(!driver.pending_trace.is_empty());
+        let _ = std::fs::remove_file(trace_path);
     }
 
     #[test]
