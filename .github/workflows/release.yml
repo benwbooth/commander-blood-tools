@@ -8,6 +8,11 @@ on:
 permissions:
   contents: write
 
+env:
+  CMAKE_POLICY_VERSION_MINIMUM: '3.5'
+  VPX_STATIC: '1'
+  PKG_CONFIG_ALL_STATIC: '1'
+
 jobs:
   build:
     name: ${{ matrix.name }}
@@ -26,7 +31,17 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes build-essential cmake ninja-build pkg-config libasound2-dev libdbus-1-dev libdecor-0-dev libdrm-dev libegl1-mesa-dev libgbm-dev libgl1-mesa-dev libibus-1.0-dev libpulse-dev libudev-dev libwayland-dev libx11-dev libxcursor-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbcommon-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev wayland-protocols
+          sudo apt-get install --yes build-essential cmake ninja-build pkg-config libvpx-dev libasound2-dev libdbus-1-dev libdecor-0-dev libdrm-dev libegl1-mesa-dev libgbm-dev libgl1-mesa-dev libibus-1.0-dev libpulse-dev libudev-dev libwayland-dev libx11-dev libxcursor-dev libxext-dev libxfixes-dev libxi-dev libxinerama-dev libxkbcommon-dev libxrandr-dev libxrender-dev libxss-dev libxtst-dev wayland-protocols
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: brew install libvpx pkg-config
+      - name: Install Windows build dependencies
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          "$VCPKG_INSTALLATION_ROOT/vcpkg" install libvpx:x64-windows-static-md
+          echo "VCPKG_ROOT=$VCPKG_INSTALLATION_ROOT" >> "$GITHUB_ENV"
+          echo "VCPKGRS_TRIPLET=x64-windows-static-md" >> "$GITHUB_ENV"
       - uses: dtolnay/rust-toolchain@stable
       - name: Build
         working-directory: .
