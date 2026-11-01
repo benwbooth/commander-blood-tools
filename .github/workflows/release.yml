@@ -41,7 +41,7 @@ jobs:
         run: |
           "$VCPKG_INSTALLATION_ROOT/vcpkg" install libvpx:x64-windows-static-md
           root="$VCPKG_INSTALLATION_ROOT/installed/x64-windows-static-md"
-          ls "$root/lib"
+          cp "$root/lib/vpx.lib" "$root/lib/libvpx.lib"
           version="$("$VCPKG_INSTALLATION_ROOT/vcpkg" list libvpx | head -1 | awk '{print $2}' | sed 's/#.*//')"
           echo "VPX_LIB_DIR=$root/lib" >> "$GITHUB_ENV"
           echo "VPX_INCLUDE_DIR=$root/include" >> "$GITHUB_ENV"
