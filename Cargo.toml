@@ -22,3 +22,8 @@ x11rb = { version = "0.13", features = ["allow-unsafe-code"] }
 wgpu = "26"
 raw-window-handle = "0.6"
 pollster = "0.4"
+
+# No debugger is used on dev builds, so skip debug info and symbols.
+[profile.dev]
+debug = false
+strip = true
