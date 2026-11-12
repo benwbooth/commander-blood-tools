@@ -43,16 +43,16 @@ PYTHONSAFEPATH=1 PYTHONPATH=tools python3 tools/play_order.py --dialogue $A/stat
   --out $A/play-order-v1/cb.json
 nix develop -c env PYTHONSAFEPATH=1 PYTHONPATH=tools python3 tools/play_order_master.py \
   --order $A/play-order-v1/cb.json --ledger $A/static-text-batches/ledger-v4.json \
-  --hnm $A/all-hnm-cb-v5 --sequences $A/native-sequences-v2/cb \
-  --inventory $A/static-content-v1/inventory.json --out $A/play-order-v1/cb-master
+  --hnm $A/all-hnm-cb-v6-seqfix --sequences $A/native-sequences-v2/cb \
+  --inventory $A/static-content-v1/inventory.json --out $A/play-order-v2/cb-master
 ```
 
-## Results (2026-11-12, ledger v4, all-HNM v5)
+## Results (2026-11-12, ledger v4, all-HNM v6-seqfix)
 
 | Master | Hours | Sites | Sequence records | Videos | Engine-played block |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `play-order-v1/cb-master/cb-play-order.mkv` | 5.19 | 5,500 | 10 | 280 | 127 |
-| `play-order-v1/bbb-master/bbb-play-order.mkv` | 5.77 | 6,874 | 41 | 463 | 144 |
+| `play-order-v2/cb-master/cb-play-order.mkv` | 5.16 | 5,500 | 10 | 280 | 127 |
+| `play-order-v2/bbb-master/bbb-play-order.mkv` | 5.76 | 6,874 | 41 | 463 | 144 |
 
 Limits: the order is a static derivation, not a recorded playthrough; player-elective
 contacts in the same round keep source order. 90 CB and 386 BBB sites sit behind guards
