@@ -54,6 +54,10 @@ nix develop -c env PYTHONSAFEPATH=1 PYTHONPATH=tools python3 tools/play_order_ma
 | `play-order-v2/cb-master/cb-play-order.mkv` | 5.16 | 5,500 | 10 | 280 | 127 |
 | `play-order-v2/bbb-master/bbb-play-order.mkv` | 5.76 | 6,874 | 41 | 463 | 144 |
 
+CB's master takes the four sub-location clips the later all-HNM v6 build voices from
+their holder planet (prison, observatory, two tumulus clips) via `--hnm-voiced
+$A/all-hnm-cb-v6 --silent-before $A/all-hnm-cb-v5/silent-videos.json`.
+
 Limits: the order is a static derivation, not a recorded playthrough; player-elective
 contacts in the same round keep source order. 90 CB and 386 BBB sites sit behind guards
 the analysis cannot satisfy and play at the end of their profile's last visit. 36 CB and

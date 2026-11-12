@@ -50,7 +50,7 @@ def probe_duration(path):
     return float(json.loads(out)["format"]["duration"])
 
 
-def cut(master, start_ns, end_ns, target):
+def cut(start_ns, end_ns, target, master):
     if target.exists():
         return target
     temporary = target.with_suffix(".tmp.mkv")
@@ -63,7 +63,12 @@ def cut(master, start_ns, end_ns, target):
     return target
 
 
-def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs):
+def silent_names(path):
+    data = read_json(path)
+    return {v["name"] for v in data["videos"]} if isinstance(data, dict) else set(data)
+
+
+def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs, voiced=None, silent_before=None):
     order = read_json(order_path)
     game = order["game"]
     sites = {}
@@ -75,6 +80,14 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs)
     hnm_master = hnm_dir / hnm["master"]
     spans = dict(zip(hnm["video_names"], chapters(hnm_dir / "chapters.ffmeta")))
     require(len(spans) == hnm["videos"], "HNM chapters and video names differ")
+    source = {name: hnm_master for name in spans}
+    if voiced is not None:
+        # Clips a later all-HNM build gave sound to: take that build's chapter for them.
+        other = read_json(voiced / "manifest.json")
+        other_spans = dict(zip(other["video_names"], chapters(voiced / "chapters.ffmeta")))
+        newly = silent_names(silent_before) - silent_names(voiced / "silent-videos.json")
+        for name in sorted(newly & set(other_spans)):
+            spans[name], source[name] = other_spans[name], voiced / other["master"]
     texts = {s["id"]: (s["authored"].get("record_name") or "", (s["authored"].get("text") or "").replace("\n", " "))
              for s in read_json(inventory_path)["sites"] if s["game"] == game}
     out.mkdir(parents=True, exist_ok=True)
@@ -106,19 +119,19 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs)
             covered.add(ident)
             start, end = spans[ident]
             target = cuts / (ident.replace("/", "_") + ".mkv")
-            cut_jobs.append((start, end, target))
+            cut_jobs.append((start, end, target, source[ident]))
             plan.append(dict(kind="video", id=ident, path=str(target), duration_ns=end - start,
                              title=f"{ident} ({entry['why']})"))
     engine_played = [name for name in order["unplaced_videos"] if name not in covered]
     for name in engine_played:
         start, end = spans[name]
         target = cuts / (name.replace("/", "_") + ".mkv")
-        cut_jobs.append((start, end, target))
+        cut_jobs.append((start, end, target, source[name]))
         plan.append(dict(kind="engine_video", id=name, path=str(target), duration_ns=end - start,
                          title=f"{name} (played by the engine; no script names it)"))
 
     with ThreadPoolExecutor(jobs) as pool:
-        list(pool.map(lambda job: cut(hnm_master, *job), cut_jobs))
+        list(pool.map(lambda job: cut(*job), cut_jobs))
 
     meta, start = [";FFMETADATA1"], 0
     for item in plan:
@@ -143,6 +156,7 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs)
         schema=1, game=game, scope="every rendered text site and HNM video in static play order",
         order=str(order_path.resolve()), order_sha256=digest(order_path),
         ledgers=[str(Path(l).resolve()) for l in ledgers], hnm_master_sha256=hnm["master_sha256"],
+        voiced_from={n: str(m) for n, m in source.items() if m != hnm_master},
         assembler_sha256=digest(__file__), chapters=len(plan),
         counts={k: sum(1 for i in plan if i["kind"] == k) for k in ("site", "sequence_record", "video", "engine_video")},
         sites_without_render=missing_sites, duration_s=duration, master=master.name,
@@ -160,9 +174,12 @@ def main():
     parser.add_argument("--sequences", type=Path, required=True, help="native sequence captures (<record>/master.mkv)")
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--hnm-voiced", type=Path, help="later all-HNM build whose newly voiced clips replace the base's")
+    parser.add_argument("--silent-before", type=Path, help="the silent-videos.json those clips were listed in")
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     args = parser.parse_args()
-    build(args.order, args.ledger, args.hnm, args.sequences, args.inventory, args.out, args.jobs)
+    build(args.order, args.ledger, args.hnm, args.sequences, args.inventory, args.out, args.jobs,
+          args.hnm_voiced, args.silent_before)
 
 
 if __name__ == "__main__":
