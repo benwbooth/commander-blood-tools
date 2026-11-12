@@ -353,6 +353,8 @@ def analyse_profile(path, carried=None, external=frozenset()):
     contact = {p.name for p in procs if any(g.text == "during travel" for g in p.guards)}
     return dict(state=state, nodes=nodes, procs=procs, reached=reached, keys=keys, openers=openers,
                 contact_lines={node.line for owner, node in all_stmts(nodes) if owner and owner.name in contact},
+                during={node.line: next((g.text.split()[1] for g in owner.guards if g.text.startswith("during ")), None)
+                        for owner, node in all_stmts(nodes) if owner},
                 rounds=rounds, finals=finals, path=path)
 
 
@@ -460,7 +462,7 @@ def build(dialogue, inventory_path, catalog_path, game, out):
         return out
 
     items = []  # (key, kind, payload)
-    mismatches, unresolved, on_planet, line_site = [], [], set(), {}
+    mismatches, unresolved, on_planet, line_site, scene_of = [], [], set(), {}, {}
     # ---- text sites
     sites = [s for s in inventory["sites"] if s["game"] == game]
     for profile in profiles:
@@ -491,6 +493,8 @@ def build(dialogue, inventory_path, catalog_path, game, out):
                 items.append((key[:1] + (rank[profile],) + key[1:], "site", site["id"], site["authored"].get("record_name")))
                 if node is not None and node.line in analysis["contact_lines"]:
                     on_planet.add(site["id"])
+                if node is not None:
+                    scene_of[site["id"]] = analysis["during"].get(node.line)
         for site in sorted((s for s in sites if s["profile"] == profile and s["kind"] == "bas"), key=lambda s: s["offset"]):
             actor = site["authored"].get("record_name")
             opener = analysis["openers"].get(actor)
@@ -499,6 +503,7 @@ def build(dialogue, inventory_path, catalog_path, game, out):
                 unresolved.append(site["id"])
             key = opener[:1] + (rank[profile],) + opener[1:-1] + (10**9 + site["offset"],)
             items.append((key, "site", site["id"], actor))
+            scene_of[site["id"]] = "contact"  # reply menus open inside the actor's contact
     # ---- learn before visiting: the player can only fly to a place someone has told them
     # about, so an on-planet contact follows the first line (by another actor) that names
     # its planet or location. Chunks are procs (key[:5]); a moved chunk sorts right after
@@ -631,7 +636,17 @@ def build(dialogue, inventory_path, catalog_path, game, out):
             for video in record_videos(record):
                 if keys and video not in placed:
                     place(min(keys), video, f"contact with {name}")
-    entries = [dict(key=list(k), kind=kind, id=ident, actor=actor) for k, kind, ident, actor in items if k is not None]
+    # Where each line is seen: the proc's `during` guard (bridge console, phone contact,
+    # on-planet travel) and, on a planet, the speaker's place and its holders.
+    def scene(ident, actor):
+        during = scene_of.get(ident)
+        out = {"during": during}
+        if during == "travel" and actor in actor_location:
+            out["place"] = lineage(actor_location[actor])
+        return out
+
+    entries = [dict(key=list(k), kind=kind, id=ident, actor=actor, scene=scene(ident, actor))
+               for k, kind, ident, actor in items if k is not None]
     report_moves = len(moved)
     entries += [dict(key=list(k), kind="video", id=name, why=why, **({"shown_in_site": site} if site else {}))
                 for name, (k, why, site) in placed.items()]
