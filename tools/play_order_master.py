@@ -122,7 +122,11 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs)
 
     meta, start = [";FFMETADATA1"], 0
     for item in plan:
-        length = item["duration_ns"] or round(probe_duration(Path(item["path"])) * 1e9)
+        # The concat demuxer advances by each file's container duration; a lossless cut
+        # can run a frame past its chapter, so cut parts are measured, not assumed.
+        if item["kind"] in ("video", "engine_video") or not item["duration_ns"]:
+            item["duration_ns"] = round(probe_duration(Path(item["path"])) * 1e9)
+        length = item["duration_ns"]
         item["duration_ns"] = length
         title = re.sub(r"[=;#\\\n]", " ", item["title"])
         meta += ["[CHAPTER]", "TIMEBASE=1/1000000000", f"START={start}", f"END={start + length}", f"title={title}"]
