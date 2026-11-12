@@ -5946,6 +5946,44 @@ BBB action-dispatch oracle cases still match the checked-in vectors. These
 checks do not establish complete DOS conversation parity. Unrecorded answer
 combinations, alternate nested reaction states, and global story states remain open.
 
+### All-HNM Masters: Clip Audio Sources
+
+`tools/hnm_anthology.py` renders every HNM resource of one game into one chaptered
+master (`output/anthology/all-hnm-{cb,bbb}-v6/`). Each clip's audio comes from, in order:
+the engine's native clip render, verified captured game audio from recorded chapters, or the
+music of the DESCRIPT record that presents it. HNM files carry no sound records.
+
+A DESCRIPT record without a 0x12 music command does not silence the stream: the selection
+(`music_voc_name_patcher`, BLOODPRG 0x0077A9) only runs for 0x12, and
+`PresentationMusicChange::Retained` keeps the current stream. Ship-HUD initialization applies
+the Arche link (the holder planet) as its current target (`initialize_ship_hud`), so a
+music-less sub-location plays the music its holder's record selected. `--locations`
+(`static-content-v1/object-locations.json`, the source-default HOLDER_OR_LOCATION chains from
+every SCRIPTn.VAR) supplies the holder. v6 voices four CB clips this way: `prison`
+(PL/1MASTA20, Mastachok's UMTHA1.VOC), `observatory` (PL/1RONDO20, Rondo's THENPHAS.VOC), and
+`fresque`/`tumulus` (PL/TUMULL20/30, Tumul's BONX1.VOC). The stream is rendered from the
+track start; in play its position depends on how long the HUD dwelt on the holder.
+
+`silent-videos.json` (schema 2) lists every clip whose chapter peaks at or below 1e-3, with the
+static evidence for its silence:
+
+- Object clips (OB): the Object record carries only an object_video command (no music, no
+  sound bank); the inventory-description lookup presents it on line 43 under the retained
+  stream. No sound is authored for the clip itself.
+- BBB music-less sub-locations: the holder planet's record selects no music either (BBB
+  planets carry none), so what plays depends on which record last selected music.
+- BBB PL/CROOL_3D and PL/SSHARK10: Kukaracha and Shark select KUKANA.VOC and FLUOR.VOC, which
+  the BBB archive (1,118 entries) does not contain.
+- PE/AAHAN_CD and PE/AAHAN_CG: Beauregard and Hanz Morlock have 32 talk clips. Talk entries 31
+  and 32 overwrite their right and left lines 39 and 40, so the engine never presents these clips.
+- Unreferenced resources: no DESCRIPT record, executable, script, dictionary or companion
+  names them, so the game never plays them. In CB these are PE/AASUP_CD/CG, KHRAN4_3, MG_SCRA,
+  ONDA02, SCRUT_A..D, SQ/MICROFOL and OB/BRS02. In BBB they are PE/AASUP_CD/CG, KHRAN4_3,
+  MG_SCRA and ONDA02. In BBB, `brs02` is named only as a sequence, which resolves to SQ/BRS02.
+
+None of the silent clips appears as an active video resource in the native-state trace of
+any of the 1,859 source chapters listed by `output/anthology/*.manifest.json`.
+
 ### Whole-Catalog Dialogue Ledger
 
 ```sh
