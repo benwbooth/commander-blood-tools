@@ -51,13 +51,15 @@ class StaticTextPlanTests(unittest.TestCase):
         self.assertIn("random draw", plan["title"])
         self.assertEqual(self.site, before)
 
-    def test_resume_line_reply_menu_stays_deferred(self):
+    def test_resume_line_reply_menu_is_planned_in_its_contact_scene(self):
         # CB SCRIPT1 COD 0x7E2: "Do you want me to explain..." | yes no.
         self.site["content_kind"] = "text_and_choices"
         self.site["authored"]["flags_b4"] = 0x10
         self.site["authored"]["sections"].append([dict(kind="dictionary", offset=6, text="yes"),
                                                   dict(kind="dictionary", offset=9, text="no")])
-        self.assertEqual(candidate(self.site, self.descriptions), (None, "reply_choice_menu"))
+        plan, reason = candidate(self.site, self.descriptions)
+        self.assertIsNone(reason)
+        self.assertEqual(plan["context"]["kind"], "source_default")
         # Over the bridge (CB SCRIPT2 COD 0x11B8, Honk) the reply rows can open.
         self.site["authored"]["record_name"] = "Honk"
         plan, reason = candidate(self.site, self.descriptions)

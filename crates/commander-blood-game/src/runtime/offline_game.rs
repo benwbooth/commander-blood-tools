@@ -1087,12 +1087,11 @@ pub(super) fn capture_static_text(
         }
         ensure!(closed, "static bootstrap panel did not close");
         host.services_mut().freeze_for_static_text();
-        if plan.initial_profile != 0 {
+        let mut select_profile = |host: &mut RuntimeGameLifecycleHost<_>, requested| -> Result<()> {
             host.services_mut().request_script_profile(requested);
-            let mut selected = false;
             for _ in 0..max_frames {
                 ensure!(
-                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    run_game_runtime_frame(&mut lifecycle, host, &mut session)?.is_none(),
                     "native lifecycle exited during static profile selection"
                 );
                 if host
@@ -1104,11 +1103,39 @@ pub(super) fn capture_static_text(
                     && lifecycle.pending_profile.is_none()
                     && !lifecycle.navigation_rebuild_pending
                 {
-                    selected = true;
-                    break;
+                    return Ok(());
                 }
             }
-            ensure!(selected, "static profile selection did not finish");
+            bail!("static profile selection did not finish")
+        };
+        if let Some(entry) = plan.entry_profile {
+            ensure!(
+                entry != plan.initial_profile,
+                "static entry profile must differ from the text profile"
+            );
+            let entry = ScriptProfileId::new_for_dialect(entry, plan.game.script_dialect())
+                .context("invalid static entry profile")?;
+            if entry.value() != 0 {
+                select_profile(&mut host, entry)?;
+            }
+            let code = host
+                .services()
+                .runtime()
+                .current_profile()
+                .context("static entry profile missing")?
+                .code();
+            ensure!(
+                code.tokens().iter().any(|token| {
+                    commander_blood_formats::instruction::decode_script_profile_request(token)
+                        .is_ok_and(|request| {
+                            request.zero_based_profile_index() == i16::from(plan.initial_profile)
+                        })
+                }),
+                "static entry profile has no D2 request for the text profile"
+            );
+        }
+        if plan.initial_profile != 0 {
+            select_profile(&mut host, requested)?;
         }
         let profile = host
             .services()
@@ -1153,6 +1180,7 @@ pub(super) fn capture_static_text(
             .encode();
         let reset_report = state_delta(&bootstrap_var, &reset_var)?;
         let console_choice = plan.context.console_choice();
+        let mut prepared_bank = Value::Null;
         if let Some(choice) = console_choice {
             // activate_horn_choice / activate_radio_choice / nav_actor_handler_4: the
             // radio bank reloads for radio records and calls, and for Honk only in BBB.
@@ -1160,6 +1188,12 @@ pub(super) fn capture_static_text(
                 || plan.game == crate::game::GameVariant::BigBugBang
             {
                 host.services_mut().load_radio_sound_bank()?;
+            } else if !bound.text.control.emits_spoken_text() {
+                // A CB Honk menu line without the spoken bit arms menu-word chatter,
+                // which plays from whichever streamed bank earlier play left resident;
+                // CB's HONK choice loads none. Prepare the bridge's own radio bank.
+                host.services_mut().load_radio_sound_bank()?;
+                prepared_bank = serde_json::json!("radio bank prepared: CB HONK loads no bank, so the resident bank depends on earlier play");
             }
         } else {
             host.services_mut().request_scene_transition(bound.actor)?;
@@ -1418,6 +1452,7 @@ pub(super) fn capture_static_text(
                             "actor_records": actor_preparation, "a6": a6,
                             "removed_startup_sequence_slots": removed_sequences.as_slice(),
                             "before": before_preparation, "after": after_preparation,
+                            "prepared_streamed_bank": prepared_bank,
                             "scene_policy": if console_choice.is_some() { "bridge console record presented over the bridge without a contact transition; reciprocal C4 installed non-actionably; no object code or story continuation" } else { "native contact transition held at deferred-actor boundary; reciprocal C4 installed non-actionably; no object code or story continuation" },
                         },
                         "reply_choices": if bound.text.control.arms_resume() {

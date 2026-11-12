@@ -52,6 +52,13 @@ pub(super) struct OfflineStaticTextPlan {
     /// context's location row (e.g. 78) would push off the 200-row screen.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub clip_vertical_offset: Option<u16>,
+    /// Zero-based profile loaded before `initial_profile`, whose COD must hold a D2
+    /// request (`vm_op_d2_script_profile_request`) for it. Profile loads compact the
+    /// companion pool and keep its vacated tail (`resource_free_inner` BLOOD2PG
+    /// 0x5714), which BBB numeric chatter hashing reads past a short DIC (0xCFA6);
+    /// entering through the requesting profile leaves the tail that request leaves.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entry_profile: Option<u8>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -297,13 +304,6 @@ pub(super) fn bind_static_text(
     ensure!(
         text.line_record.byte_offset() == actor.source_offset(),
         "unsupported_static_text: line_owner_differs_from_presentation_actor"
-    );
-    // The word-choice rows only advance on presented frames (run_frame_tail), and a
-    // contact scene held at its deferred-actor boundary keeps the C2 presentation
-    // gate set, so frame_presented never rises there; bridge records have no gate.
-    ensure!(
-        !text.control.arms_resume() || plan.context.console_choice().is_some(),
-        "unsupported_static_text: contact_reply_choice_menu"
     );
     if let Some(choice) = plan.context.console_choice() {
         let builtins = profile.builtins();

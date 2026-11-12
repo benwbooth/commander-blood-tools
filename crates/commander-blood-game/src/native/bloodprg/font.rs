@@ -534,33 +534,34 @@ pub fn draw_planar_dialogue_text(
             break;
         }
         let glyph_index = mapped_glyph(&fonts.main_character_map, position, character)?;
-        let advance = *fonts.main_advances.get(usize::from(glyph_index)).ok_or(
-            GameFontDrawError::InvalidGlyphIndex {
-                position,
-                character,
-                glyph_index,
-            },
-        )? as i8 as i32;
+        // The routine indexes the advance table without a bound, so an unmapped
+        // character (map byte 0xFF, e.g. '&' in BBB SCRIPT10 COD 0x189E) reads the
+        // byte aliased 255 entries on, which lies in the executable's static font
+        // data (the measurement table keeps those 256 bytes).
+        let advance = match fonts.main_advances.get(usize::from(glyph_index)) {
+            Some(advance) => *advance,
+            None => fonts.main_measurement_advances[usize::from(glyph_index)],
+        } as i8 as i32;
         let glyph_start = usize::from(glyph_index) * MAIN_FONT_GLYPH_HEIGHT as usize;
-        let glyph = fonts
+        // APPROX: an out-of-table glyph's rows lie past the executable image (BLOOD2PG
+        // 0x17B16 + 255 * 8 is beyond the file, i.e. runtime BSS), so they are not
+        // known statically and are drawn blank; the aliased advance above is exact.
+        if let Some(glyph) = fonts
             .main_glyphs
             .get(glyph_start..glyph_start + MAIN_FONT_GLYPH_HEIGHT as usize)
-            .ok_or(GameFontDrawError::InvalidGlyphIndex {
+        {
+            collect_byte_glyph_writes(
+                &mut writes,
+                glyph,
+                MAIN_FONT_GLYPH_WIDTH,
+                FontPoint {
+                    x: pen_x,
+                    y: origin.y,
+                },
                 position,
-                character,
-                glyph_index,
-            })?;
-        collect_byte_glyph_writes(
-            &mut writes,
-            glyph,
-            MAIN_FONT_GLYPH_WIDTH,
-            FontPoint {
-                x: pen_x,
-                y: origin.y,
-            },
-            position,
-            color,
-        )?;
+                color,
+            )?;
+        }
         pen_x = pen_x.saturating_add(advance);
         draw_width = draw_width.wrapping_add(advance as i16 as u16);
         drawn_glyphs += COUNT_INCREMENT;
@@ -1429,6 +1430,13 @@ mod tests {
                     vector.name
                 );
                 exact_hashes += COUNT_INCREMENT;
+            } else if vector.name == "high_bit_map_result_is_drawn_not_skipped" {
+                // The aliased advance is exact; the out-of-table rows are drawn blank
+                // (APPROX), so only the pen and width are compared.
+                let outcome = result.unwrap();
+                assert_eq!(outcome.drawn_glyphs, vector.characters_drawn);
+                assert_eq!(outcome.draw_width, vector.draw_width);
+                assert_eq!(framebuffer, before, "{}", vector.name);
             } else {
                 assert!(
                     matches!(
@@ -1444,6 +1452,28 @@ mod tests {
             }
         }
         assert_eq!(exact_hashes, PLANAR_DIALOGUE_DRAW_EXACT_HASH_COUNT);
+    }
+
+    #[test]
+    fn planar_dialogue_unmapped_glyph_uses_aliased_advance_and_draws_nothing() {
+        // BBB SCRIPT10 COD 0x189E draws '&', whose map byte is 0xFF.
+        let mut fonts = decoded_fonts();
+        fonts.main_character_map[usize::from(b'&')] = u8::MAX;
+        fonts.main_measurement_advances[usize::from(u8::MAX)] = 3;
+        let mut framebuffer = planar_font_framebuffer(0, 0);
+        let before = framebuffer.clone();
+        let outcome = draw_planar_dialogue_text(
+            &mut framebuffer,
+            &fonts,
+            b"&",
+            FontPoint { x: 8, y: 20 },
+            FontVerticalBand { top: 0, bottom: 199 },
+            7,
+        )
+        .unwrap();
+        assert_eq!(outcome.draw_width, 3);
+        assert_eq!(outcome.drawn_glyphs, 1);
+        assert_eq!(framebuffer, before);
     }
 
     #[test]
@@ -1845,6 +1875,9 @@ mod tests {
             if let Some(stored_advance) = fonts.main_advances.get_mut(usize::from(glyph_index)) {
                 *stored_advance = advance;
                 install_main_font_oracle_glyph(&mut fonts, glyph_index, case_index);
+            } else {
+                // The oracle's advance byte at the aliased (out-of-table) position.
+                fonts.main_measurement_advances[usize::from(glyph_index)] = advance;
             }
         }
         fonts

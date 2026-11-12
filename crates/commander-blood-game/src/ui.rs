@@ -39,6 +39,9 @@ pub(crate) struct DialogueUiAssets {
     inline_font: SequenceCaptionFont,
     inline_character_map: Box<[u8]>,
     inline_advances: Box<[u8]>,
+    /// The 256 bytes from the advance table's start, which an unmapped (0xFF)
+    /// character reads past the glyph count (see `draw_planar_dialogue_text`).
+    inline_aliased_advances: [u8; 256],
     inline_color: [u8; 4],
     panel_fonts: Box<[SequenceCaptionFont]>,
     panel_colors: [[u8; 4]; PANEL_TEXT_COLORS.len()],
@@ -128,6 +131,7 @@ impl DialogueUiAssets {
             inline_font,
             inline_character_map: fonts.main_character_map.clone(),
             inline_advances: fonts.main_advances.clone(),
+            inline_aliased_advances: fonts.main_measurement_advances,
             inline_color: [rgb[0], rgb[1], rgb[2], OPAQUE],
             panel_fonts,
             panel_colors: PANEL_TEXT_COLORS.map(|index| {
@@ -181,16 +185,16 @@ impl DialogueUiAssets {
                 .inline_character_map
                 .get(usize::from(character))
                 .context("inline dialogue byte outside font map")?;
-            let advance = *self
-                .inline_advances
-                .get(usize::from(index))
-                .context("inline dialogue references missing glyph")?
-                as i8 as i32;
-            overlay.blit_image(
-                &self.inline_font.glyphs[usize::from(index)],
-                [SUBTITLE_GLYPH_SIZE; 2],
-                [x, origin[1]],
-            );
+            // APPROX for out-of-table glyphs, as in `draw_planar_dialogue_text`: the
+            // aliased advance is exact; the rows lie past the executable image and
+            // are drawn blank.
+            let advance = match self.inline_advances.get(usize::from(index)) {
+                Some(advance) => *advance,
+                None => self.inline_aliased_advances[usize::from(index)],
+            } as i8 as i32;
+            if let Some(glyph) = self.inline_font.glyphs.get(usize::from(index)) {
+                overlay.blit_image(glyph, [SUBTITLE_GLYPH_SIZE; 2], [x, origin[1]]);
+            }
             x = x.saturating_add(advance);
         }
         Ok(())

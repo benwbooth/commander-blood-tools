@@ -63,36 +63,44 @@ The b4&0x02 random gate (`vm_condition_5`: the line passes on rand(5) == 0) is
 prepared by discarding PRNG draws until the next one passes; the count is
 reported as `random_gate_discarded_draws` and the title says `random draw`.
 
-Reply-menu lines (b4&0x10) over the bridge (Honk/menu) hold until the native
-word-choice rows are open and drawn, and the verifier checks those rows against
-the authored reply section; no row is selected.
+Reply-menu lines (b4&0x10), over the bridge (Honk/menu) or in a contact scene,
+hold until the native word-choice rows are open and drawn, and the verifier
+checks those rows against the authored reply section; no row is selected.
+Contact scenes reach the rows because the exporter releases the held scene's
+bridge hold (`release_scene_bridge_hold`, added for animated contact scenes), so
+`run_frame_tail` presents frames and advances the word-choice interface. The
+earlier `reply_choice_menu` deferral predated that release and was stale.
 
-Final ledger (`output/anthology/static-text-batches/ledger-v1.json`, built by
-`tools/static_text_ledger.py`, plans v10): all 12,457 sites have exactly one
-status. 12,002 are `verified_prepared_scene` (CB 5,326, BBB 6,676), 22 are
-`failed`, and 433 are deferred. Prepared scenes are never gameplay coverage.
+BBB numeric lines outside SCRIPT1/SCRIPT2 set `entry_profile: 1`: menu chatter
+hashes DIC bytes past a short dictionary (BLOOD2PG 0xCFA6), i.e. the companion
+pool tail the previous profile left (`resource_free_inner` 0x5714). Every other
+BBB profile is entered only by a SCRIPT2 D2 request, so the exporter loads
+SCRIPT2 first and checks that its COD holds a D2 request for the text profile.
+The displayed number stays the source-default VAR value. CB Honk menu lines
+without the spoken bit (b4&0x20) arm menu-word chatter, which plays from
+whatever streamed bank earlier play left resident (CB's HONK choice loads none);
+the exporter prepares the bridge's radio bank and reports it as
+`prepared_streamed_bank`. An unmapped character (map byte 0xFF, `&` in BBB
+SCRIPT10 COD 0x189E) takes the aliased advance the unbounded table read gives
+(static font data, 0 there); its rows lie past the executable image (runtime
+BSS), so they are drawn blank (APPROX).
 
-Failures, each retained with its error:
-- 15 BBB numeric menu/subtitle lines (SCRIPT8, 9, 15) fail resolving the numeric
-  chatter dictionary slot (`resolve_audio_dictionary_words`): the retained DIC
-  suffix for the number is only written by earlier play, so the source default
-  has none.
-- BBB SCRIPT10 COD 0x189E: the authored text contains `-&!2`, and the font draw
-  rejects glyph index 255 for character 38.
-- 6 CB lines (the Honk cheat-mode lines at SCRIPT2 COD 0x1229..0x1291, BAS 0x1539,
-  SCRIPT5 BAS 0x2D8A): menu text arms dialogue chatter, and CB's HONK choice
-  loads no streamed bank.
+Ledger (`output/anthology/static-text-batches/ledger-v4.json`, plans v13): all
+12,457 sites have exactly one status. 12,374 are `verified_prepared_scene`
+(CB 5,500, BBB 6,874), none are `failed`, and 83 are deferred. Versus
+ledger-v1/v3 (12,002 verified, 22 failed, 433 deferred): the 350 contact reply
+menus, the 15 BBB numeric lines, the `&` line and the 6 CB Honk lines now
+verify; the 32 other BBB numeric lines outside SCRIPT1/2 were re-rendered with
+the SCRIPT2 entry. Prepared scenes are never gameplay coverage.
 
-Still deferred, with reasons in `planning.json` (433 of 12,457 after plans v10):
-4 record-field conditions, 46 generated inventory menus (they list the player's
-aboard objects), 33 control-only sites (no words, so nothing to show), and 350
-contact-scene `reply_choice_menu` lines (b4&0x10). Their reply rows
-belong to the word-choice interface, which `run_frame_tail` only advances on
-presented frames; a contact scene held at its deferred-actor boundary keeps the
-C2 gate set and reports none, so the rows are never drawn. Six CB Honk
-inline-menu lines (including the cheat-mode lines at SCRIPT2 COD 0x1229..0x1291)
-fail closed: menu text arms dialogue chatter, and CB's HONK choice loads no
-streamed bank, so which bank is resident depends on earlier play. The verifier compares
+Still deferred, with reasons in `planning.json`: 4 record-field conditions (CB
+SCRIPT2 BAS Bob_Morlock lines gated on a VAR field; showing them needs a
+rewritten field, i.e. invented state), 33 control-only sites (no words), and 46
+BBB GIVE inventory menus. Their reply section is the 0xFFFE aboard list; the
+generator (BLOOD2PG 0x6BF0, `SequelInventoryState::offer`) offers every aboard
+InventoryItem and rejects the line when none is aboard, and the source-default
+roster (`vm_record_state_proc` 0x59FF over the source VAR) is empty, so any list
+would be invented play history. The verifier compares
 inline-menu words slot by slot (BBB against its English display words) and
 subtitles by normalized text.
 

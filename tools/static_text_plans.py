@@ -86,11 +86,6 @@ def candidate(site, descriptions, placement=()):
         # none can only reach the bridge as an answered radio call
         # (nav_actor_handler_4 0x81FB). The binder rejects non-actor owners.
         console = "radio_call"
-    if resume and console is None:
-        # The reply rows need the word-choice interface, which only advances on
-        # presented frames; a contact scene held at its deferred-actor boundary
-        # keeps the C2 presentation gate set, so it reports none.
-        return None, "reply_choice_menu"
     matches = [descriptions[identity] for identity in site["direct_description_candidates"]]
     if console:
         record = dict(name=authored.get("record_name", ""))
@@ -132,6 +127,12 @@ def candidate(site, descriptions, placement=()):
         plan["title"] = plan["title"][:-1] + ", random draw]"
     if site["content_kind"] == "symbolic_text":
         plan["title"] = plan["title"][:-1] + ", source-default numbers]"
+        if site["game"] == "bbb" and profile not in ("SCRIPT1", "SCRIPT2"):
+            # BBB numeric chatter hashes DIC bytes past a short dictionary, i.e. the
+            # companion-pool tail the previous profile left. Every other BBB profile is
+            # entered only by a SCRIPT2 D2 request; the exporter checks that request.
+            plan["entry_profile"] = 1
+            plan["title"] = plan["title"][:-1] + ", entered from SCRIPT2]"
     return plan, None
 
 
