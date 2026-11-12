@@ -1614,6 +1614,15 @@ impl<'window> ModernGameServices<'window> {
         }
     }
 
+    /// Present scene-transition lines from `vertical_offset` (static exporter only).
+    pub(super) fn set_scene_transition_vertical_offset(&mut self, vertical_offset: u16) -> Result<()> {
+        self.scene_transition
+            .as_mut()
+            .context("scene transition is already being updated")?
+            .set_image_vertical_offset(vertical_offset);
+        Ok(())
+    }
+
     /// Run the recovered synchronous alien-overlay coordinator to completion.
     pub fn run_runtime_alien_overlay_cycle(
         &mut self,

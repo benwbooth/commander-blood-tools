@@ -1268,6 +1268,11 @@ pub(super) fn capture_static_text(
             host.platform_mut().begin_capture();
             let (mut decoded, mut stalled, mut resource) = (0u64, 0u32, serde_json::Value::Null);
             for frame in 1..=max_frames {
+                if let Some(offset) = plan.clip_vertical_offset {
+                    // The clip is dispatched by the scene-transition coordinator, which
+                    // presents from its own image row; hold it at the planned row.
+                    host.services_mut().set_scene_transition_vertical_offset(offset)?;
+                }
                 ensure!(
                     run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
                     "native lifecycle exited during the clip"

@@ -57,6 +57,16 @@ impl RuntimeSceneTransition {
         self.state.bridge_blocked = false;
     }
 
+    /// Override the scene row the transition dispatcher presents its lines from.
+    ///
+    /// The coordinator publishes `image_vertical_offset` as the presentation row of
+    /// every line it dispatches (35 once its scene image loads, 0 at cleanup); the
+    /// static exporter uses this to present a full-screen film from row 0, as the
+    /// executable does for the films it presents outside a placed location scene.
+    pub(super) fn set_image_vertical_offset(&mut self, vertical_offset: u16) {
+        self.state.image_vertical_offset = vertical_offset;
+    }
+
     /// Native contact pointers refer to VAR byte offsets, not DEB directory IDs.
     pub(super) fn record_bindings(
         &self,
