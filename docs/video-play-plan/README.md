@@ -64,6 +64,23 @@ lines are planned in their contact scene, and each plan row says so.
 Executable fixed films come from the asset path table (BLOODPRG 0x0F48B; BLOOD2PG's
 line 0 is `sq\microfol.HNM`). The line numbers are the `presentation_catalog` line map.
 
+## v7 results (2026-11-12)
+
+* Text lines: all 12,374 previously verified lines re-rendered and verified in their scenes
+  (CB 5,500, BBB 6,874): `static-text-batches/v7-{cb,bbb}-shard*` and `v7r2-cb`, merged in
+  `static-text-batches/ledger-v7.json` (83 deferred sites carried over from v4).
+* Masters: `output/anthology/all-hnm-cb-v7/all-hnm-videos.mkv`, 701 videos, 3333.4 s (528 engine
+  clips, 47 sequence-panel cuts, opening, credits, 103 never-played plain decodes, 21 fallbacks);
+  `all-hnm-bbb-v7`, 711 videos, 3680.8 s (500 engine clips, 128 sequence-panel cuts, opening,
+  credits, 41 never-played plain decodes, 40 fallbacks). Each chapter title names its render method and scene.
+* Fallbacks, i.e. planned engine clips without a verified render (decoded full screen):
+  * AAHAN_CD/CG: never presented; talk entries 31/32 overwrite lines 39/40.
+  * AAARCH10: the Ark has no DESCRIPT target.
+  * BBB CROOL_3D/SSHARK10: their music (KUKANA.VOC, FLUOR.VOC) is missing from the archive.
+  * The rest are talk, idle or object clips that never presented before the frame cap, even
+    with their record applied: CB PION, AAISW, CRL01, ISWH..ISWX, KHRAN3_3/4_1/4_2, MG_SCR3,
+    SCR12..21; BBB AAPORT, AATRO, AAZEN, DOC01..08, OMPA..L, ZEN01..12, ZENJ/K_TR.
+
 ## Open items
 
 * **SQ/POLLUP** (one per game) needs the script travel action (C1 travel phases → TravelReady).
