@@ -1,18 +1,18 @@
 {
   "schema": 1,
   "game": "commander_blood",
-  "planner_sha256": "b3ed491078f857269a4c7c5cb016dce07f2d9f55ea7b2065d61db8cdcbf96307",
+  "planner_sha256": "b48532e6fac101411bfa6bd46759c552683cf294753eb72b9b9e5bec3202b445",
   "catalog_sha256": "738dab6e8a7ac13333ef03e7b0a28f8e03dc2b82a75214ac17a596a263f70e3e",
   "play_order_sha256": "87004f84ff5d296f85ed2d1427a45981d9e6db93d6f7eaeac6a5d2591dd62c4e",
   "ledger_sha256": "d535e17af70303b484d808e0bbe4efe21246a9b9ea1d8b800db207e17b14acf1",
   "text_scene_counts": {
     "bridge_console": 1252,
-    "source_default": 2263,
-    "travel": 1985
+    "source_default": 2351,
+    "travel": 1897
   },
   "render_methods": {
-    "engine_clip": 539,
-    "plain_decode": 113,
+    "engine_clip": 549,
+    "plain_decode": 103,
     "descript_sequence": 47,
     "opening": 1,
     "credits": 1
@@ -234,17 +234,15 @@
         "base_line": "cb.script3.cod.00004f73",
         "line": 43,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1946,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Scruter_K"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc masta4 (SCRIPT3)"
       }
     },
@@ -279,17 +277,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 43,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc fif2 (SCRIPT4)"
       }
     },
@@ -318,17 +314,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 43,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -867,17 +861,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 43,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc clay8 (SCRIPT4)"
       }
     },
@@ -1355,17 +1347,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 8,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -1879,17 +1869,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 8,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -4800,17 +4788,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 17,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -4916,17 +4902,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 8,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -4956,17 +4940,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 18,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -5034,17 +5016,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 10,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc clay1 (SCRIPT3)"
       }
     },
@@ -5226,17 +5206,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 15,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -5272,17 +5250,15 @@
         "base_line": "cb.script3.cod.00000418",
         "line": 16,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1226,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Anna_Haf"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -9298,17 +9274,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 9,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -9338,17 +9312,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 10,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9378,17 +9350,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 11,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9418,17 +9388,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 12,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9458,17 +9426,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 13,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9498,17 +9464,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 14,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9538,17 +9502,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 15,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -9578,17 +9540,15 @@
         "base_line": "cb.script3.cod.000065be",
         "line": 16,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1010,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Jerry_Khan"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc jerry1 (SCRIPT3)"
       }
     },
@@ -10822,17 +10782,15 @@
         "base_line": "cb.script3.cod.00004f73",
         "line": 8,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1946,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Scruter_K"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc masta4 (SCRIPT3)"
       }
     },
@@ -10862,17 +10820,15 @@
         "base_line": "cb.script3.cod.00004f73",
         "line": 10,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1946,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Scruter_K"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc masta4 (SCRIPT3)"
       }
     },
@@ -11680,17 +11636,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 8,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc st (SCRIPT3)"
       }
     },
@@ -11727,17 +11681,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 9,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc st (SCRIPT3)"
       }
     },
@@ -11774,17 +11726,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 10,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc st (SCRIPT3)"
       }
     },
@@ -11821,17 +11771,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 11,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc fif (SCRIPT4)"
       }
     },
@@ -11868,17 +11816,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 12,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc fif (SCRIPT4)"
       }
     },
@@ -11915,17 +11861,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 13,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc st (SCRIPT3)"
       }
     },
@@ -16816,17 +16760,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 9,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -16856,17 +16798,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 12,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -16896,17 +16836,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 16,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -16936,17 +16874,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 18,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -16976,17 +16912,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 15,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -17016,17 +16950,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 10,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -17056,17 +16988,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 11,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -17096,17 +17026,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 17,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "the scene of the actor's first line"
       }
     },
@@ -17136,17 +17064,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 13,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -17176,17 +17102,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 14,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0 (SCRIPT2)"
       }
     },
@@ -21552,17 +21476,15 @@
         "base_line": "cb.script3.cod.00005651",
         "line": 7,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Fifi"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc fif"
       }
     },
@@ -21891,13 +21813,20 @@
         "detail": "ship presentation dialogue cycle, second line (lines 4..5)",
         "citation": "BLOODPRG asset path table 0x0F48B"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "ship presentation during travel"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_EJECTION.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 5,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge: the ship presentation's opening cycle (BLOODPRG 0x00AFA0) publishes lines 4 then 5"
       }
     },
     {
@@ -21911,13 +21840,20 @@
         "detail": "ship presentation dialogue cycle, first line (ship_presentation DIALOGUE_FIRST_LINE 4)",
         "citation": "BLOODPRG asset path table 0x0F48B"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "ship presentation during travel"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_EJECTORX.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 4,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge: the ship presentation's opening cycle (BLOODPRG 0x00AFA0) publishes lines 4 then 5"
       }
     },
     {
@@ -22398,13 +22334,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_00.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22417,13 +22360,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_01.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22436,13 +22386,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_02.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22455,13 +22412,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_03.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22474,13 +22438,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_04.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22493,13 +22464,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_05.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22512,13 +22490,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_06.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -22531,13 +22516,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-cb/SQ_HYPER_07.HNM.plan.json",
+        "base_line": "cb.script1.cod.0000046e",
+        "line": 6,
+        "context": {
+          "kind": "bridge_console",
+          "actor_offset": 1370,
+          "choice": "radio_call"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -23056,17 +23048,15 @@
         "base_line": "cb.script3.cod.00004f73",
         "line": 7,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 1946,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Scruter_K"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc masta4"
       }
     },
@@ -23794,11 +23784,11 @@
       },
       "scene": {
         "context": "ship_travel",
-        "note": "ship presentation during travel"
+        "note": "black-hole travel (script travel action)"
       },
       "render": {
         "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "note": "played between the camera and relation phases of the script's black-hole travel action (TravelReady, line 44); the static exporter cannot yet run that action, so the film is decoded full screen with no scene rather than shown in a wrong one"
       }
     },
     {
@@ -24559,17 +24549,15 @@
         "base_line": "cb.script2.cod.00006120",
         "line": 7,
         "context": {
-          "kind": "travel",
+          "kind": "source_default",
           "actor_offset": 2090,
-          "planet": "Trashlando",
-          "destination": "Trashlando",
           "descript_records": [
             "Emasculator"
           ]
         }
       },
       "scene": {
-        "context": "travel",
+        "context": "source_default",
         "note": "travel scene of proc emasc0"
       }
     },

@@ -56,7 +56,9 @@ lines are planned in their contact scene, and each plan row says so.
 | SQ/MIND (CB) / SQ/MICROFOL (BBB), line 0 | opening reel | native `opening` export (silent) |
 | SQ/THE_STAR, line 1 | credits | native `credits` export |
 | SQ/CRYOGEL / SQ/CRYORAD, lines 41/42 | contact transition open/close | contact transition at row 0 |
-| SQ/EJECTORX, SQ/EJECTION (4/5), SQ/HYPER_00..07 (6), SQ/POLLUP (44) | ship presentation cycle, hyperjump, black-hole TravelReady | **open:** the static exporter can't yet build that ship state, so these are plain decodes (full screen, silent) and the plan says why |
+| SQ/EJECTORX, SQ/EJECTION, lines 4/5 | an active ship presentation with no phase bit opens with this cycle, then the HUD (BLOODPRG 0x00AFA0) | bridge, ship presentation started natively; capture starts when the planned film is active |
+| SQ/HYPER_00..07, line 6 | travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues `hyper_0N` from its cycling index | bridge, then native `start_camera_transition` with that index |
+| SQ/POLLUP, line 44 | script black-hole travel action, between its camera and relation phases (TravelReady) | **open:** the static exporter can't run the script travel action yet, so this is a plain decode (full screen, silent) and the plan says why |
 | videos no record, script or executable path of the game names | none | plain decode, marked `played: false` (e.g. CB's ARCHEX*/TVRED*/CHANTRO*: only BBB records name them) |
 
 Executable fixed films come from the asset path table (BLOODPRG 0x0F48B; BLOOD2PG's
@@ -64,9 +66,18 @@ line 0 is `sq\microfol.HNM`). The line numbers are the `presentation_catalog` li
 
 ## Open items
 
-* Ship-cycle, hyperspace and black-hole films (11 per game) still need a static path into
-  the ship presentation state.
-* BBB actors' runtime places (D5 settlement) for on-planet lines.
-* The opening and credits exports hold every HNM frame for two 68 ms waits: MIND runs
-  35.6 s. The DOSBox-X capture cited in `platform.rs` puts MIND at about 18 s. This predates
-  this work (the v5-era exporter gives the same result).
+* **SQ/POLLUP** (one per game) needs the script travel action (C1 travel phases → TravelReady).
+* **BBB on-planet places.** D5 `settle_descendants` belongs to BBB's timed population
+  simulation (`population_growth`, `population_conflict`, timer-gated procs such as
+  `glgest`). An actor's place depends on how long it has run, so there is no single static
+  placement. Lines whose only place is Trashlando (no DESCRIPT Location) use their contact
+  scene. The same applies to 88 CB lines at Trashlando.
+* **Opening and credits pacing.** A queued frame is due when the software tick count has
+  advanced by the stream threshold (`list_d8c_advance_due` 0x00A240). That threshold is 16
+  for the startup reel (catalog variant; 12 after BLOODPRG 0x7C72). The port charges every
+  blocking-loop iteration a fixed 68 ms (`PRESENTATION_FRAME_DURATION`, a capture-measured
+  constant), and 68 ms gives fewer than 16 ticks. So every frame takes two iterations: MIND
+  runs 35.6 s. The DOSBox-X capture shows about 18 s, but 16 ticks at the port's 182 ticks/s
+  is already 88 ms (23 s). The tick rate, the startup delay and the original per-iteration
+  cost can't all be right, and the original loop timing has to be recovered from the binary
+  before the pacing is changed (prime rule: no tuning to captures). This predates this work.

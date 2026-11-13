@@ -55,9 +55,9 @@ FIXED_FILMS = {  # name -> (line, trigger, scene)
 }
 HYPERSPACE = re.compile(r"SQ/HYPER_0[0-7]\.HNM")
 ROW_ZERO_LINES = {41, 42}
-SHIP_CYCLE_NOTE = ("played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); "
-                   "the static exporter cannot yet establish that ship state, so the film is decoded full screen "
-                   "with no scene rather than shown in a wrong one")  # presented while the transition image row is 0
+SHIP_CYCLE_NOTE = ("played between the camera and relation phases of the script's black-hole travel action "
+                   "(TravelReady, line 44); the static exporter cannot yet run that action, so the film is "
+                   "decoded full screen with no scene rather than shown in a wrong one")  # presented while the transition image row is 0
 
 
 def chain_of(actor, rows):
@@ -263,14 +263,20 @@ def build(args):
                 base = any_base("SCRIPT1", "contact") or next(iter(site_plans))
                 add_clip(entry, base, line, {"clip_vertical_offset": 0} if line in ROW_ZERO_LINES else {},
                          "contact transition over the bridge before/after FRIGO.FD")
+            elif line in (4, 5):
+                base = any_base("SCRIPT1", "bridge") or next(iter(site_plans))
+                add_clip(entry, base, line, {},
+                         "bridge: the ship presentation's opening cycle (BLOODPRG 0x00AFA0) publishes lines 4 then 5")
             else:
-                entry["scene"] = dict(context="ship_travel", note="ship presentation during travel")
+                entry["scene"] = dict(context="ship_travel", note="black-hole travel (script travel action)")
                 entry["render"] = dict(method="plain_decode", note=SHIP_CYCLE_NOTE)
         elif HYPERSPACE.fullmatch(name):
             entry.update(played=True, trigger=dict(path="hyperspace", line=6,
                                                    detail="camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"))
-            entry["scene"] = dict(context="ship_travel", note="hyperjump")
-            entry["render"] = dict(method="plain_decode", note=SHIP_CYCLE_NOTE)
+            base = any_base("SCRIPT1", "bridge") or next(iter(site_plans))
+            add_clip(entry, base, 6, {"clip_sequence": name.split("/")[1].lower()},
+                     "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) "
+                     "queues hyper_0N on line 6 from its cycling index")
         elif name.startswith("SQ/") and any(kind == "Sequence" for _, kind, _, _ in uses):
             records = sorted({record for record, kind, _, _ in uses if kind == "Sequence"})
             entry.update(played=True, trigger=dict(path="DESCRIPT Sequence record (sequence panel, line 2)",

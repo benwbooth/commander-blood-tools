@@ -60,8 +60,9 @@ def build(args):
     derived = {resource_name(v["source_resource_name"]): v for v in read_json(video_dir / "manifest.json")["videos"]}
     rate = read_json(video_dir / "manifest.json")["nominal_frame_rate"][0]
     clips = {}
-    for directory in args.clips:
-        for batch in sorted(directory.glob("*/coverage.json")):
+    for directory in args.clips:  # later directories override earlier ones
+        own = directory / "coverage.json"
+        for batch in [own] if own.exists() else sorted(directory.glob("*/coverage.json")):
             for entry in read_json(batch)["completed"]:
                 clips[entry["clip"]] = entry
     out.mkdir(parents=True)

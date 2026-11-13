@@ -1015,6 +1015,10 @@ const HYPERSPACE_CLIP_LINE: u16 = 6;
 const SCRIPT_SEQUENCE_CLIP_LINE: u16 = 7;
 /// Sequence request bit raised by A8 (load_sequence_request).
 const SEQUENCE_REQUEST_FLAG: u8 = 2;
+/// Lines published by the ship presentation's opening cycle (0x00AFA0).
+const SHIP_CYCLE_CLIP_LINES: [u16; 2] = [4, 5];
+/// `PRESENTATION_ACTIVE` flag of the ship presentation (ship_presentation.rs).
+const SHIP_PRESENTATION_ACTIVE: u16 = 1;
 /// Black-hole travel line between its camera and relation phases (TravelReady).
 const TRAVEL_READY_CLIP_LINE: u16 = 44;
 /// Ship-navigation status line that presents a place's arrival film.
@@ -1364,17 +1368,33 @@ pub(super) fn capture_static_text(
             if let Some(offset) = plan.clip_vertical_offset {
                 host.services_mut().set_ship_navigation_scene_vertical_offset(offset);
             }
-            if let Some(basename) = &plan.clip_sequence {
-                if line == HYPERSPACE_CLIP_LINE {
-                    // Line 6 names the current hyperspace film (select_hyperspace_video).
-                    host.services_mut().select_hyperspace_video(basename.as_bytes())?;
-                } else {
-                    host.services_mut().select_script_sequence_clip(basename.as_bytes())?;
-                }
+            if let Some(basename) = plan.clip_sequence.as_ref().filter(|_| line != HYPERSPACE_CLIP_LINE) {
+                host.services_mut().select_script_sequence_clip(basename.as_bytes())?;
             }
             let selector = i32::from(line)
                 - i32::from(crate::native::bloodprg::presentation_line_for_text_selector(0));
-            if selector < -1 || line == TRAVEL_READY_CLIP_LINE {
+            if line == HYPERSPACE_CLIP_LINE {
+                // Hyperspace is queued by the camera approach of a travel action
+                // (camera_fsm_state_gate 0x8A4E, phase 3: hyper_0N from the cycling
+                // sequence index, line 6). Arm that travel action with the index of the
+                // planned film and let the native state machine present it.
+                let basename = plan.clip_sequence.as_deref().context("hyperspace clip needs its film")?;
+                let index = basename
+                    .trim_end_matches(".hnm")
+                    .rsplit('_')
+                    .next()
+                    .and_then(|digits| digits.parse::<u16>().ok())
+                    .context("hyperspace film has no sequence index")?;
+                let runtime = host.services_mut().runtime_mut();
+                let mut approach = runtime.take_camera_approach();
+                approach.hyperspace_sequence_index = index;
+                runtime.restore_camera_approach(approach);
+                runtime.start_camera_transition();
+            } else if SHIP_CYCLE_CLIP_LINES.contains(&line) {
+                // An active ship presentation with no phase bit opens with its cycle
+                // (BLOODPRG 0x00AFA0): lines 4 and 5 (ejectorx, ejection), then the HUD.
+                host.services_mut().ship_presentation_state_mut().flags = SHIP_PRESENTATION_ACTIVE;
+            } else if selector < -1 || line == TRAVEL_READY_CLIP_LINE {
                 // Lines below the text range (A8's line 7, the ship cycle 4..6) and
                 // TravelReady 44 are not text selections: their writers store the shared
                 // active line, which the script system publishes to both the ship
@@ -1401,7 +1421,17 @@ pub(super) fn capture_static_text(
                 );
             }
             let before_clip = host.services().semantic_trace_snapshot(&lifecycle)?;
-            host.platform_mut().begin_capture();
+            // A cycle presents several fixed films in turn: capture only the planned one.
+            let only = SHIP_CYCLE_CLIP_LINES.contains(&line).then(|| {
+                host.services()
+                    .presentation_catalog()
+                    .resource_name(crate::native::bloodprg::PresentationResourceId::new(line))
+                    .map(|name| String::from_utf8_lossy(name.as_bytes()).to_ascii_lowercase())
+            }).flatten();
+            if only.is_none() {
+                host.platform_mut().begin_capture();
+            }
+            let mut capturing = only.is_none();
             let (mut decoded, mut stalled, mut resource) = (0u64, 0u32, serde_json::Value::Null);
             for frame in 1..=max_frames {
                 if let Some(offset) = plan.clip_vertical_offset {
@@ -1415,6 +1445,18 @@ pub(super) fn capture_static_text(
                 );
                 let snapshot = host.services().semantic_trace_snapshot(&lifecycle)?;
                 let count = snapshot["video"]["decoded_frame_count"].as_u64().unwrap_or(0);
+                if let Some(name) = &only {
+                    let active = snapshot["video"]["active_resource"]
+                        .as_str()
+                        .is_some_and(|active| active.to_ascii_lowercase() == *name);
+                    if !capturing {
+                        if !active {
+                            continue;
+                        }
+                        host.platform_mut().begin_capture();
+                        capturing = true;
+                    }
+                }
                 if count > decoded {
                     decoded = count;
                     stalled = 0;

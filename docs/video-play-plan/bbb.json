@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "game": "big_bug_bang",
-  "planner_sha256": "5fed5b6efed86d738d412e76c716ade4cda7e36d172b69a8cb9b4f6702588ab5",
+  "planner_sha256": "b48532e6fac101411bfa6bd46759c552683cf294753eb72b9b9e5bec3202b445",
   "catalog_sha256": "62ec5ee2eca83b9d4b6c1d402b1f2d9ea194f88478479fc83b98050e607070bd",
   "play_order_sha256": "753d02ae387d96521827b1e622035a63077325a8bd40aca0a8ae7a93e42b1aed",
   "ledger_sha256": "d535e17af70303b484d808e0bbe4efe21246a9b9ea1d8b800db207e17b14acf1",
@@ -11,8 +11,8 @@
     "travel": 542
   },
   "render_methods": {
-    "engine_clip": 530,
-    "plain_decode": 51,
+    "engine_clip": 540,
+    "plain_decode": 41,
     "descript_sequence": 128,
     "opening": 1,
     "credits": 1
@@ -24145,13 +24145,20 @@
         "detail": "ship presentation dialogue cycle, second line (lines 4..5)",
         "citation": "BLOOD2PG asset path table"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "ship presentation during travel"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_EJECTION.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 5,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge: the ship presentation's opening cycle (BLOODPRG 0x00AFA0) publishes lines 4 then 5"
       }
     },
     {
@@ -24165,13 +24172,20 @@
         "detail": "ship presentation dialogue cycle, first line (ship_presentation DIALOGUE_FIRST_LINE 4)",
         "citation": "BLOOD2PG asset path table"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "ship presentation during travel"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_EJECTORX.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 4,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge: the ship presentation's opening cycle (BLOODPRG 0x00AFA0) publishes lines 4 then 5"
       }
     },
     {
@@ -25180,13 +25194,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_00.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25199,13 +25220,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_01.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25218,13 +25246,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_02.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25237,13 +25272,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_03.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25256,13 +25298,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_04.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25275,13 +25324,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_05.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25294,13 +25350,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_06.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -25313,13 +25376,20 @@
         "line": 6,
         "detail": "camera_approach HYPERSPACE_ACTIVE_LINE 6; the executable names hyper_00..07"
       },
-      "scene": {
-        "context": "ship_travel",
-        "note": "hyperjump"
-      },
       "render": {
-        "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "method": "engine_clip",
+        "plan": "clip-plans-bbb/SQ_HYPER_07.HNM.plan.json",
+        "base_line": "bbb.script1.cod.000006ed",
+        "line": 6,
+        "context": {
+          "actor_offset": 4440,
+          "choice": "horn",
+          "kind": "bridge_console"
+        }
+      },
+      "scene": {
+        "context": "bridge_console",
+        "note": "bridge, then the travel action's camera approach (camera_fsm_state_gate 0x8A4E) queues hyper_0N on line 6 from its cycling index"
       }
     },
     {
@@ -27079,11 +27149,11 @@
       },
       "scene": {
         "context": "ship_travel",
-        "note": "ship presentation during travel"
+        "note": "black-hole travel (script travel action)"
       },
       "render": {
         "method": "plain_decode",
-        "note": "played by the ship presentation during travel (cycle lines 4..6, hyperjump, TravelReady 44); the static exporter cannot yet establish that ship state, so the film is decoded full screen with no scene rather than shown in a wrong one"
+        "note": "played between the camera and relation phases of the script's black-hole travel action (TravelReady, line 44); the static exporter cannot yet run that action, so the film is decoded full screen with no scene rather than shown in a wrong one"
       }
     },
     {
