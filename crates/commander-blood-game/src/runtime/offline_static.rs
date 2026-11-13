@@ -59,6 +59,11 @@ pub(super) struct OfflineStaticTextPlan {
     /// entering through the requesting profile leaves the tail that request leaves.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub entry_profile: Option<u8>,
+    /// The rest of this line's conversation run (one proc firing: same profile, actor
+    /// and scene), presented in order after this line inside the same continuous
+    /// capture, so the scene and its music are set up once and never restart.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub run_lines: Vec<OfflineStaticTextPlan>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]

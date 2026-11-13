@@ -1429,7 +1429,7 @@ pub(super) fn capture_static_text(
                     .map(|name| String::from_utf8_lossy(name.as_bytes()).to_ascii_lowercase())
             }).flatten();
             if only.is_none() {
-                host.platform_mut().begin_capture();
+                host.platform_mut().begin_capture_after_next_frame();
             }
             let mut capturing = only.is_none();
             let (mut decoded, mut stalled, mut resource) = (0u64, 0u32, serde_json::Value::Null);
@@ -1500,7 +1500,14 @@ pub(super) fn capture_static_text(
             expected_publications.len() == 1,
             "static publication accounting mismatch"
         );
-        host.platform_mut().begin_capture();
+        host.platform_mut().begin_capture_after_next_frame();
+        let mut plan = plan;
+        let mut bound = bound;
+        let mut a6 = a6;
+        let mut expected_publications = expected_publications;
+        let mut pending_lines = plan.run_lines.iter();
+        let mut run_lines: Vec<Value> = Vec::new();
+        let mut line_start_ns = 0u64;
         let mut first_full_ui_ns = None;
         let mut fully_revealed_ui_frames = 0u64;
         let mut max_matching_glyph_pixels = 0u64;
@@ -1570,6 +1577,43 @@ pub(super) fn capture_static_text(
                 );
             }
             if text_held && replies_open {
+                let now_ns = host.platform().elapsed_ns - host.platform().capture_origin_ns;
+                let line_report = serde_json::json!({
+                    "site": format!("{}.script{}.{}.{:08x}",
+                        if plan.game == crate::game::GameVariant::BigBugBang { "bbb" } else { "cb" },
+                        plan.initial_profile + 1,
+                        serde_json::to_value(&plan.source)?.as_str().unwrap_or("cod"), plan.text_site),
+                    "start_ns": line_start_ns, "end_ns": now_ns,
+                    "first_full_ui_ns": first_full_ui_ns, "publication": expected_publications[0],
+                });
+                if let Some(next) = pending_lines.next() {
+                    // Next line of the run: same profile, actor and scene; the story stays
+                    // frozen, so the line is published exactly as a single site would be.
+                    run_lines.push(line_report);
+                    ensure!(next.initial_profile == plan.initial_profile, "a run spans profiles");
+                    let profile = host.services().runtime().current_profile().context("static profile missing")?;
+                    bound = bind_static_text(next, profile)?;
+                    plan = next;
+                    lifecycle.presentation.active = true;
+                    lifecycle.presentation.start_locked = true;
+                    lifecycle.presentation.hold_ready = false;
+                    lifecycle.presentation.dialogue_hold_complete = false;
+                    lifecycle.presentation.word_choice_active = false;
+                    lifecycle.presentation.subtitle_display_active = false;
+                    lifecycle.presentation.menu_deferred = false;
+                    host.services_mut().script_backend_mut().observe_text_publications();
+                    a6 = host.services_mut().publish_static_text(&mut lifecycle, plan, &bound)?;
+                    expected_publications = host.services_mut().script_backend_mut().take_text_publications();
+                    ensure!(expected_publications.len() == 1, "static run publication accounting mismatch");
+                    first_full_ui_ns = None;
+                    first_replies_ns = None;
+                    text_held = false;
+                    line_start_ns = now_ns;
+                    continue;
+                }
+                if !run_lines.is_empty() {
+                    run_lines.push(line_report);
+                }
                 let driver = host.platform();
                 let final_var = host
                     .services()
@@ -1610,6 +1654,7 @@ pub(super) fn capture_static_text(
                             "max_matching_glyph_pixels": max_matching_glyph_pixels,
                             "scope": "native UI buffer; encoded visibility requires separate final-frame inspection"},
                         "final_var_sha256": sha256(&final_var),
+                        "run_lines": run_lines,
                     }),
                     host.services().read_offline_rgba()?,
                 ));
@@ -1814,6 +1859,9 @@ struct OfflineGamePlatform<'sink> {
     captured_waits: u64,
     max_frames: u64,
     capturing: bool,
+    /// Drop the next captured interval: its frame was drawn before the presentation
+    /// prepared for the capture took effect (the scene before the line was applied).
+    skip_next_interval: bool,
     capture_origin_ns: u64,
     capture_origin_sample: u64,
     pointer: [i16; 2],
@@ -1833,6 +1881,7 @@ impl<'sink> OfflineGamePlatform<'sink> {
             captured_waits: 0,
             max_frames,
             capturing: false,
+            skip_next_interval: false,
             capture_origin_ns: 0,
             capture_origin_sample: 0,
             pointer: INITIAL_LOGICAL_POINTER,
@@ -1845,6 +1894,13 @@ impl<'sink> OfflineGamePlatform<'sink> {
         self.capturing = true;
         self.capture_origin_ns = self.elapsed_ns;
         self.capture_origin_sample = self.sample_cursor;
+    }
+
+    /// Begin capturing after the next wait, whose frame still shows the state from
+    /// before the prepared presentation was applied.
+    fn begin_capture_after_next_frame(&mut self) {
+        self.begin_capture();
+        self.skip_next_interval = true;
     }
 
     fn wait(&mut self, services: &mut ModernGameServices<'_>, duration: Duration) -> Result<()> {
@@ -1861,7 +1917,11 @@ impl<'sink> OfflineGamePlatform<'sink> {
             / 1_000_000_000) as u64;
         let mut audio = vec![0.0; usize::try_from(sample_end - self.sample_cursor)?];
         services.render_offline_audio(&mut audio)?;
-        if self.capturing {
+        if self.capturing && self.skip_next_interval {
+            self.skip_next_interval = false;
+            self.capture_origin_ns = end;
+            self.capture_origin_sample = sample_end;
+        } else if self.capturing {
             let rgba = services.read_offline_rgba()?;
             self.sink.write_interval(OfflinePresentationInterval {
                 start_ns: self.elapsed_ns - self.capture_origin_ns,
