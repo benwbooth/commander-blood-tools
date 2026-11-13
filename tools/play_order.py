@@ -653,6 +653,18 @@ def build(dialogue, inventory_path, catalog_path, game, out):
     entries += [dict(key=list(k), kind="sequence_record", id=name, why=why,
                      videos=record_videos(records[name])) for name, (k, why) in sequences.items()]
     entries.sort(key=lambda e: (tuple(e["key"]), e["kind"] == "site", e["kind"] == "video", e["id"]))
+    # Conversation runs: consecutive sites from one proc firing with the same actor and
+    # scene. The game plays such a run as one scene: music and background continue.
+    runs, previous = [], None
+    for entry in entries:
+        if entry["kind"] != "site":
+            previous = None
+            continue
+        run_key = (tuple(entry["key"][:5]), entry["actor"], entry["scene"].get("during"))
+        if run_key != previous:
+            runs.append(dict(actor=entry["actor"], scene=entry["scene"], sites=[]))
+            previous = run_key
+        runs[-1]["sites"].append(entry["id"])
     unplaced_sites = sorted(ident for k, kind, ident, actor in items if k is None)
     unplaced_videos = sorted(videos - set(placed))
     report = dict(
@@ -660,7 +672,7 @@ def build(dialogue, inventory_path, catalog_path, game, out):
         inventory_sha256=digest(inventory_path), catalog_sha256=digest(catalog_path),
         sources={p: digest(dialogue / game / p.lower() / "source.blood") for p in profiles},
         profiles=profiles, visits={p: sources[p]["visits"] for p in profiles}, engine_set_globals=sorted(external), rounds={p: sources[p]["rounds"] for p in profiles},
-        contacts_after_first_mention=report_moves, order=entries, unresolved_guard_sites=sorted(unresolved), unplaced_sites=unplaced_sites, unplaced_videos=unplaced_videos,
+        contacts_after_first_mention=report_moves, order=entries, conversation_runs=runs, unresolved_guard_sites=sorted(unresolved), unplaced_sites=unplaced_sites, unplaced_videos=unplaced_videos,
         site_statement_mismatches=mismatches)
     save_json(out, report)
     print(f"{game}: {len(profiles)} profiles {profiles}; {sum(e['kind'] == 'site' for e in entries)} sites and "
