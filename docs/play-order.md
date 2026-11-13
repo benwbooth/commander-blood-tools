@@ -64,3 +64,22 @@ the analysis cannot satisfy and play at the end of their profile's last visit. 3
 47 BBB sites still have no verified render. HNM chapters without a native clip render
 use the decoder's context-free palette, so some flybys and entrance clips show wrong
 colours; those come from the all-HNM master and need native renders there.
+
+## v3 (2026-11-13): v7 scene renders
+
+`play-order-v3/{cb,bbb}-master` assemble the v7 renders (`ledger-v7.json`, `all-hnm-*-v7`,
+no hand cursor, each line in its script's scene) with `--play-plan video-play-plan/<game>.json`:
+the opening reel (CB MIND, BBB MICROFOL) opens the master, THE_STAR credits close the game,
+CRYOGEL/CRYORAD wrap the first contact call, EJECTORX/EJECTION precede the first bridge
+line, HYPER_0n precedes the first line at the n-th place travelled to, and films no game
+path plays form a final block. Sequence-record films play in their authored order.
+
+| Master | Hours | Sites | Videos | Executable films placed | Never played |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `play-order-v3/cb-master/cb-play-order.mkv` | 5.23 | 5,500 | 325 | 27 | 100 |
+| `play-order-v3/bbb-master/bbb-play-order.mkv` | 5.36 | 6,874 | 567 | 105 | 39 |
+
+Sampled frames show no hand. CB on-planet lines show their places; lines whose only place
+is Trashlando stay in the freezer. BBB renders only 542 lines on-planet: most BBB actors'
+places come from D5 settlement, so about 4,200 BBB on-planet lines are still rendered in
+their contact (freezer) scene (docs/video-play-plan/README.md, open items).

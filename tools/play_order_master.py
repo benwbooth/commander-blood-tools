@@ -32,6 +32,16 @@ from native_sequence_anthology import read_json, require
 from video_anthology import digest, save_json
 
 
+def chapter_titles(ffmeta):
+    return [line.split("=", 1)[1] for line in ffmeta.read_text().splitlines() if line.startswith("title=")]
+
+
+def video_names(manifest, directory):
+    if "video_names" in manifest:
+        return manifest["video_names"]
+    return [title.split()[0] for title in chapter_titles(directory / "chapters.ffmeta")]
+
+
 def chapters(ffmeta):
     out, current = [], {}
     for line in ffmeta.read_text().splitlines():
@@ -68,7 +78,8 @@ def silent_names(path):
     return {v["name"] for v in data["videos"]} if isinstance(data, dict) else set(data)
 
 
-def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs, voiced=None, silent_before=None):
+def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs, voiced=None, silent_before=None,
+          play_plan=None):
     order = read_json(order_path)
     game = order["game"]
     sites = {}
@@ -78,13 +89,13 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
                 sites[row["id"]] = row["detail"]
     hnm = read_json(hnm_dir / "manifest.json")
     hnm_master = hnm_dir / hnm["master"]
-    spans = dict(zip(hnm["video_names"], chapters(hnm_dir / "chapters.ffmeta")))
+    spans = dict(zip(video_names(hnm, hnm_dir), chapters(hnm_dir / "chapters.ffmeta")))
     require(len(spans) == hnm["videos"], "HNM chapters and video names differ")
     source = {name: hnm_master for name in spans}
     if voiced is not None:
         # Clips a later all-HNM build gave sound to: take that build's chapter for them.
         other = read_json(voiced / "manifest.json")
-        other_spans = dict(zip(other["video_names"], chapters(voiced / "chapters.ffmeta")))
+        other_spans = dict(zip(video_names(other, voiced), chapters(voiced / "chapters.ffmeta")))
         newly = silent_names(silent_before) - silent_names(voiced / "silent-videos.json")
         for name in sorted(newly & set(other_spans)):
             spans[name], source[name] = other_spans[name], voiced / other["master"]
@@ -95,7 +106,17 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
     cuts.mkdir(exist_ok=True)
 
     plan, covered, missing_sites, cut_jobs = [], set(), [], []
+    fixed = {}
+    if play_plan is not None:
+        # The opening reel and the credits are executable films with fixed places, even
+        # where a sequence record also names the file (BBB 42micro names MICROFOL).
+        for video in read_json(play_plan)["videos"]:
+            method = (video.get("render") or {}).get("method")
+            if method in ("opening", "credits") and video["name"] in spans:
+                fixed[video["name"]] = method
     for entry in order["order"]:
+        if entry["id"] in fixed:
+            continue
         kind, ident = entry["kind"], entry["id"]
         if kind == "site":
             detail = sites.get(ident)
@@ -107,8 +128,8 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
             plan.append(dict(kind="site", id=ident, path=str(Path(detail["path"]) / "master.mkv"),
                              duration_ns=detail["duration_ns"], title=f"{profile} {actor}: {text[:70]}"))
         elif kind == "sequence_record":
-            capture = sequence_dir / ident / "master.mkv"
-            if capture.exists() and ident not in covered:
+            capture = sequence_dir / ident / "master.mkv" if sequence_dir else None
+            if capture and capture.exists() and ident not in covered:
                 covered.add(ident)
                 covered.update(entry["videos"])
                 plan.append(dict(kind="sequence_record", id=ident, path=str(capture), duration_ns=None,
@@ -122,13 +143,73 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
             cut_jobs.append((start, end, target, source[ident]))
             plan.append(dict(kind="video", id=ident, path=str(target), duration_ns=end - start,
                              title=f"{ident} ({entry['why']})"))
-    engine_played = [name for name in order["unplaced_videos"] if name not in covered]
-    for name in engine_played:
+    def video_item(name, kind, why):
         start, end = spans[name]
         target = cuts / (name.replace("/", "_") + ".mkv")
         cut_jobs.append((start, end, target, source[name]))
-        plan.append(dict(kind="engine_video", id=name, path=str(target), duration_ns=end - start,
-                         title=f"{name} (played by the engine; no script names it)"))
+        covered.add(name)
+        return dict(kind=kind, id=name, path=str(target), duration_ns=end - start, title=f"{name} ({why})")
+
+    never_played = []
+    if play_plan is not None:
+        # Executable-played films go where their code path first runs (video-play-plan):
+        # the opening reel before anything, the ship cycle before the first bridge line,
+        # the contact transition around the first contact call, hyperspace before the first
+        # travel, the credits after the game. Films no game path plays close the master.
+        scenes = {e["id"]: (e.get("scene") or {}).get("during") for e in order["order"] if e["kind"] == "site"}
+        places_of = {e["id"]: tuple((e.get("scene") or {}).get("place") or (e.get("actor"),))
+                     for e in order["order"] if e["kind"] == "site"}
+        by_line, opening, credits = {}, [], []
+        for video in read_json(play_plan)["videos"]:
+            name = video["name"]
+            if name in covered or name not in spans:
+                continue
+            if not video.get("played", True):
+                never_played.append(name)
+                continue
+            method = (video.get("render") or {}).get("method")
+            line = (video.get("trigger") or {}).get("line")
+            if name in fixed:
+                (opening if fixed[name] == "opening" else credits).append(name)
+            elif name in order["unplaced_videos"] and line is not None:
+                by_line.setdefault(line, []).append(name)
+
+        def first_index(during):
+            return next((i for i, item in enumerate(plan) if item["kind"] == "site" and scenes.get(item["id"]) == during),
+                        None)
+
+        def insert(index, names, why, after=False):
+            if index is None or not names:
+                return
+            items = [video_item(n, "engine_video", why) for n in names]
+            plan[index + (1 if after else 0):index + (1 if after else 0)] = items
+
+        contact = first_index("contact")
+        if contact is not None:
+            end = contact
+            while end + 1 < len(plan) and plan[end + 1]["kind"] == "site" and scenes.get(plan[end + 1]["id"]) == "contact":
+                end += 1
+            insert(end, by_line.pop(42, []), "contact transition close", after=True)
+            insert(contact, by_line.pop(41, []), "contact transition open")
+        # The hyperspace film index cycles with each travel: the n-th film before the first
+        # line at the n-th place travelled to.
+        places, travels = set(), []
+        for index, item in enumerate(plan):
+            if item["kind"] == "site" and scenes.get(item["id"]) == "travel":
+                place = places_of.get(item["id"])
+                if place not in places:
+                    places.add(place)
+                    travels.append(index)
+        for index, name in reversed(list(zip(travels, sorted(by_line.pop(6, []))))):
+            insert(index, [name], "hyperspace on a travel")
+        insert(first_index("bridge"), by_line.pop(4, []) + by_line.pop(5, []), "ship presentation cycle")
+        plan[0:0] = [video_item(n, "engine_video", "opening reel") for n in opening]
+        plan.extend(video_item(n, "engine_video", "credits") for n in credits)
+    engine_played = [name for name in order["unplaced_videos"] if name not in covered and name not in never_played]
+    for name in engine_played:
+        plan.append(video_item(name, "engine_video", "played by the engine; no script names it"))
+    for name in never_played:
+        plan.append(video_item(name, "unplayed_video", "no path in this game plays it"))
 
     with ThreadPoolExecutor(jobs) as pool:
         list(pool.map(lambda job: cut(*job), cut_jobs))
@@ -158,7 +239,8 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
         ledgers=[str(Path(l).resolve()) for l in ledgers], hnm_master_sha256=hnm["master_sha256"],
         voiced_from={n: str(m) for n, m in source.items() if m != hnm_master},
         assembler_sha256=digest(__file__), chapters=len(plan),
-        counts={k: sum(1 for i in plan if i["kind"] == k) for k in ("site", "sequence_record", "video", "engine_video")},
+        counts={k: sum(1 for i in plan if i["kind"] == k)
+                for k in ("site", "sequence_record", "video", "engine_video", "unplayed_video")},
         sites_without_render=missing_sites, duration_s=duration, master=master.name,
         plan=[{k: v for k, v in i.items() if k != "path"} for i in plan]))
     print(f"{master}: {duration / 3600:.2f} h, {len(plan)} chapters, {len(missing_sites)} sites lack a render, "
@@ -171,7 +253,8 @@ def main():
     parser.add_argument("--ledger", type=Path, action="append", required=True,
                         help="static-text ledger; later ledgers override earlier ones")
     parser.add_argument("--hnm", type=Path, required=True, help="all-HNM master directory")
-    parser.add_argument("--sequences", type=Path, required=True, help="native sequence captures (<record>/master.mkv)")
+    parser.add_argument("--sequences", type=Path, help="native sequence captures (<record>/master.mkv) to play whole")
+    parser.add_argument("--play-plan", type=Path, help="video-play-plan/<game>.json: place executable-played films")
     parser.add_argument("--inventory", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--hnm-voiced", type=Path, help="later all-HNM build whose newly voiced clips replace the base's")
@@ -179,7 +262,7 @@ def main():
     parser.add_argument("--jobs", type=int, default=max(1, (os.cpu_count() or 2) // 2))
     args = parser.parse_args()
     build(args.order, args.ledger, args.hnm, args.sequences, args.inventory, args.out, args.jobs,
-          args.hnm_voiced, args.silent_before)
+          args.hnm_voiced, args.silent_before, args.play_plan)
 
 
 if __name__ == "__main__":

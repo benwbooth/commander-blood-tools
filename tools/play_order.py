@@ -568,8 +568,8 @@ def build(dialogue, inventory_path, catalog_path, game, out):
             return
         if record["authored"]["kind"] == "Sequence" and (name not in sequences or key < sequences[name][0]):
             sequences[name] = (key, why)
-        for video in record_videos(record):
-            place(key, video, why)
+        for index, video in enumerate(record_videos(record)):
+            place(key + (index,), video, why)  # the record's films play in their authored order
 
     def pick(file_name, preference):
         found = by_file.get(file_name.lower(), [])
