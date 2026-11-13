@@ -98,3 +98,51 @@ line 0 is `sq\microfol.HNM`). The line numbers are the `presentation_catalog` li
   is already 88 ms (23 s). The tick rate, the startup delay and the original per-iteration
   cost can't all be right, and the original loop timing has to be recovered from the binary
   before the pacing is changed (prime rule: no tuning to captures). This predates this work.
+
+## Paused (2026-11-12, at Ben's request: CPU)
+
+All v8 renders were stopped. Nothing is rendering.
+
+**Done and committed (main):** `tools/video_play_plan.py` places every `during travel`
+line with evidence, so no on-planet line uses the freezer:
+* the source-default place when it has a DESCRIPT Location; ships such as CB's Kraner count;
+* otherwise the actor's explicit `actor.current_location = place` write in the scripts:
+  same profile first, then the nearest earlier profile, then later ones;
+* otherwise (BBB only) a race-mate's scripted place, because D5 `settle_descendants`
+  moves a race group together;
+* freezer fallbacks left: 0. CB travel lines: 1,928 source-default, 88 script-write.
+  BBB: 542 source-default, 3,647 script-write, 74 race-mate.
+
+The plan sets are `output/anthology/video-play-plan/text-plans-{cb,bbb}-v8` and
+`clip-plans-{cb,bbb}-v8`. 119 CB lines, 3,721 BBB lines, 52 CB clips and 138 BBB clips
+differ from v7. Each line's evidence is in its plan-set `reason`.
+
+**Freezer audit:** `during contact` (D1, scene gate DS:0x274F) lines come from the contact
+transition, which the console's CRYOBOX contacts start. Its image is FRIGO.FD (DS:0x00F3),
+and the native cryobox chapters show the same. TELEPHONE calls are the radio path on the
+bridge, not the freezer. Freezer-backed lines: CB 2,232 (2,218 contact + 14 unguarded
+reply menus); BBB 1,037 (544 + 493). The 3,721 BBB and 119 CB fallbacks are gone.
+
+**In progress (branch `wip/conversation-runs`, not merged):**
+1. Frame-0 fix: the offline platform's `begin_capture_after_next_frame` drops the first
+   captured interval, whose frame predates the prepared line or clip (stale actor or
+   pose). Text and clip captures use it. It builds; there is no verified render yet.
+2. Conversation-run capture: `OfflineStaticTextPlan.run_lines` presents a run's later
+   lines inside one capture, so the scene and its music never restart.
+   `tools/static_run_render.py plan|render` builds one plan per play-order
+   `conversation_runs` entry (CB 662 captures, BBB 440) and writes `run.json` with each
+   line's start and end. **Blocker:** publishing the second line fails with
+   `static A6 did not publish: Gated(AlreadyShown)`. The run's lines are marked as shown
+   once presented, so `publish_static_text` must reset that gate (or the actor's
+   shown-line state) between lines. That's the next step.
+
+**Next steps when resumed:**
+1. Fix the AlreadyShown gate between run lines. Test the runs `cb run0000-0` (14 bridge
+   lines), `cb run0004-0` (5 freezer lines) and `bbb run0070-0` (travel, placed by
+   script write): music must be continuous, the first frame must not be stale, and the
+   backgrounds must be real.
+2. Render every run capture (CB 662, BBB 440) with the new exporter. Each run gets a
+   sidecar with line times and placement evidence. Write ledger v8 from them.
+3. Re-render all clips with the frame-0 fix (every v7 clip starts with one stale frame),
+   then rebuild the all-HNM masters.
+4. Ship-cycle fixes, POLLUP and opening pacing stay as listed under Open items.

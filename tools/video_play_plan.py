@@ -53,6 +53,9 @@ FIXED_FILMS = {  # name -> (line, trigger, scene)
     "SQ/CRYORAD.HNM": (42, "contact transition completion (scene_transition COMPLETE_LINE 42), at cleanup", "contact"),
     "SQ/POLLUP.HNM": (44, "black-hole travel between its camera and relation phases (script_action TravelReady line 44)", "bridge"),
 }
+# Travel destinations: planets, their locations, and ships (NavigationEntity, e.g. CB's
+# Kraner) that carry their own DESCRIPT Location record.
+PLACE_KINDS = ("CelestialBody", "Location", "NavigationEntity")
 HYPERSPACE = re.compile(r"SQ/HYPER_0[0-7]\.HNM")
 ROW_ZERO_LINES = {41, 42}
 SHIP_CYCLE_NOTE = ("played between the camera and relation phases of the script's black-hole travel action "
@@ -65,13 +68,66 @@ def chain_of(actor, rows):
     chain, place = [], rows.get(actor, {}).get("holder")
     while place in rows and len(chain) < 4 and place not in chain:
         chain.insert(0, place)
-        if rows[place]["kind"] == "CelestialBody":
+        if rows[place]["kind"] in ("CelestialBody", "NavigationEntity"):  # a top-level destination
             break
         place = rows[place]["holder"]
-    return [p for p in chain if rows[p]["kind"] in ("CelestialBody", "Location")]
+    return [p for p in chain if rows[p]["kind"] in PLACE_KINDS]
 
 
-def scene_context(plan, scene, rows, places, located=frozenset()):
+def place_chain(place, rows_by_profile, profile, located):
+    """Planet .. place chain of a place, from the given profile's VAR (or any profile)."""
+    order = [profile] + sorted((p for p in rows_by_profile if p != profile), key=lambda p: int(p[6:]))
+    for candidate in order:
+        rows = rows_by_profile.get(candidate, {})
+        if place not in rows:
+            continue
+        chain, current = [place], place
+        while rows[current]["kind"] not in ("CelestialBody", "NavigationEntity") \
+                and rows[current].get("holder") in rows and len(chain) < 4:
+            current = rows[current]["holder"]
+            chain.insert(0, current)
+        chain = [p for p in chain if rows[p]["kind"] in PLACE_KINDS]
+        if chain and set(chain) <= located:
+            return chain
+    return None
+
+
+def placement_evidence(actor, profile, evidence, rows_by_profile, located):
+    """Where the scripts put an actor whose default place cannot be travelled to.
+
+    1. The actor's own explicit `actor.current_location = place` writes: the line's own
+       profile first (source order), then the nearest earlier profile (its last write),
+       then later profiles.
+    2. A race-mate's explicit write: D5 `settle_descendants` moves an actor group
+       (race) from its source together, so the group's scripted place stands in.
+    Returns (chain, evidence text) or (None, None).
+    """
+    number = int(profile[6:])
+
+    def ordered(writes):
+        same = [w for w in writes if w[1] == number]
+        earlier = sorted((w for w in writes if w[1] < number), key=lambda w: (-w[1], -w[2]))
+        later = sorted((w for w in writes if w[1] > number), key=lambda w: (w[1], w[2]))
+        return same + earlier + later
+
+    for place, prof, line in ordered(evidence["writes"].get(actor, [])):
+        chain = place_chain(place, rows_by_profile, profile, located)
+        if chain:
+            return chain, f"script write {actor}.current_location = {place} (SCRIPT{prof} source.blood:{line})"
+    race = evidence["race"].get(actor) if evidence["settles_by_race"] else None
+    if race:
+        mates = [(place, prof, line, mate) for mate, writes in evidence["writes"].items()
+                 if mate != actor and evidence["race"].get(mate) == race for place, prof, line in writes]
+        for place, prof, line, mate in ordered(mates):
+            chain = place_chain(place, rows_by_profile, profile, located)
+            if chain:
+                return chain, (f"race {race}: settled with {mate}, scripted {mate}.current_location = {place} "
+                               f"(SCRIPT{prof} source.blood:{line})")
+    return None, None
+
+
+def scene_context(plan, scene, rows, places, located=frozenset(), evidence=None, rows_by_profile=None,
+                  profile=None):
     """Rewrite a prepared plan's context for the scene the line is shown in."""
     ctx = plan["context"]
     actor_offset, history = ctx["actor_offset"], ctx.get("history_concepts", [])
@@ -89,19 +145,38 @@ def scene_context(plan, scene, rows, places, located=frozenset()):
         chain = placement or (chain_of(actor, rows) if actor else [])
         if not chain and scene.get("place"):
             chain = [p for p in reversed(scene["place"]) if p in places]
-        if chain and not set(chain) <= located:
-            return dict(kind="source_default", actor_offset=actor_offset, descript_records=character, **extra), \
-                f"during travel at {'/'.join(chain)}, which has no DESCRIPT Location record to travel to " \
-                "(BBB actors leave it by runtime D5 settlement): contact scene"
-        if chain:
+        why = f"during travel: native travel to {'/'.join(chain)} (source-default place), actor over its background"
+        if (not chain or not set(chain) <= located) and actor and evidence is not None:
+            found, because = placement_evidence(actor, profile, evidence, rows_by_profile, located)
+            if found:
+                default = "/".join(chain) if chain else "none"
+                chain, why = found, (f"during travel; source-default place {default} cannot be travelled to "
+                                     f"(no DESCRIPT Location); placed at {'/'.join(found)} by {because}")
+        if chain and set(chain) <= located:
             return dict(kind="travel", actor_offset=actor_offset, planet=chain[0], destination=chain[-1],
-                        descript_records=character, **extra), \
-                f"during travel: native travel to {'/'.join(chain)}, actor over the place's background"
+                        descript_records=character, **extra), why
         return dict(kind="source_default", actor_offset=actor_offset, descript_records=character, **extra), \
-            "during travel but the actor has no place in this profile: contact scene"
+            "FREEZER FALLBACK: during travel, but no travelable place and no script evidence for one"
     return dict(kind="source_default", actor_offset=actor_offset, descript_records=character, **extra), \
         "during contact: contact transition (FRIGO.FD freezer)" if during == "contact" else \
         "no during guard (reply menu or unguarded proc): contact transition (FRIGO.FD freezer)"
+
+
+def script_placements(dialogue, game):
+    """Explicit `actor.current_location = place` writes and each character's race."""
+    writes, race = {}, {}
+    for path in sorted((dialogue / game).glob("script*/source.blood")):
+        number = int(path.parent.name[6:])
+        state, _ = parse_profile(path)
+        for name, fields in state.items():
+            if "race" in fields:
+                race.setdefault(name, fields["race"])
+        for index, line in enumerate(path.read_text().splitlines()):
+            m = re.match(r"\s*(\w+)\.current_location = (\w+)$", line)
+            if m and m.group(2) != "aboard":
+                writes.setdefault(m.group(1), []).append((m.group(2), number, index + 1))
+    # Only the sequel's D5 settle_descendants moves actor groups together.
+    return dict(writes=writes, race=race, settles_by_race=game == "bbb")
 
 
 def proc_facts(dialogue, game):
@@ -145,13 +220,14 @@ def build(args):
     locations = read_json(args.locations)[game]
     frames = {resource_name(v["source_resource_name"]): v["frame_count"]
               for v in read_json(args.video_manifest)["videos"]}
-    places = {r["name"] for rows in locations.values() for r in rows if r["kind"] in ("CelestialBody", "Location")}
+    places = {r["name"] for rows in locations.values() for r in rows if r["kind"] in PLACE_KINDS}
     rows_of = {profile: {r["name"]: r for r in rows} for profile, rows in locations.items()}
     scene_of = {e["id"]: e["scene"] for e in order if e["kind"] == "site"}
     actor_of = {e["id"]: e.get("actor") for e in order if e["kind"] == "site"}
     rank = {e["id"]: i for i, e in enumerate(order) if e["kind"] == "site"}
     descriptions = {r["authored"]["name"]: r["authored"] for r in inventory["descriptions"] if r["game"] == game}
     located = {name for name, record in descriptions.items() if record["kind"] == "Location"}
+    evidence = script_placements(args.dialogue, game)
 
     # ---- text lines: every verified prepared render, moved into its real scene
     text_dir = out / f"text-plans-{game}"
@@ -163,7 +239,8 @@ def build(args):
         plan = read_json(Path(row["detail"]["path"]) / "report.json")["runner"]["plan"]
         profile = f"SCRIPT{plan['initial_profile'] + 1}"
         scene = scene_of.get(row["id"], {"during": None})
-        context, why = scene_context(plan, scene, rows_of.get(profile, {}), places, located)
+        context, why = scene_context(plan, scene, rows_of.get(profile, {}), places, located, evidence,
+                                     rows_of, profile)
         plan = dict(plan, context=context)
         plan["title"] = re.sub(r"\[prepared [^\]]*\]", f"[{context['kind'].replace('_', ' ')} scene]", plan["title"])
         name = row["id"] + ".plan.json"
