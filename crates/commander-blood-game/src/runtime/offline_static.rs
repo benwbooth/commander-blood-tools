@@ -83,6 +83,20 @@ pub(super) enum StaticTextContext {
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         history_concepts: Vec<u16>,
     },
+    /// An on-planet line (the proc's `during travel` guard, D0 BRANCH_GAMEFLAG): the
+    /// commander travels to the actor's place exactly as a post-HUD chapter does
+    /// (`begin_chapter_travel`: planet then destination DESCRIPT records, their
+    /// backgrounds and navigation music, the place's film on line 3), and the actor
+    /// presents over that background. No contact transition (FRIGO.FD) is involved.
+    Travel {
+        actor_offset: usize,
+        planet: String,
+        destination: String,
+        /// The actor's own DESCRIPT record(s), applied once the place has arrived.
+        descript_records: Vec<String>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        history_concepts: Vec<u16>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, Serialize, PartialEq, Eq)]
@@ -96,15 +110,18 @@ pub(super) enum StaticConsoleChoice {
 impl StaticTextContext {
     pub fn actor_offset(&self) -> usize {
         match self {
-            Self::SourceDefault { actor_offset, .. } | Self::BridgeConsole { actor_offset, .. } => {
-                *actor_offset
-            }
+            Self::SourceDefault { actor_offset, .. }
+            | Self::BridgeConsole { actor_offset, .. }
+            | Self::Travel { actor_offset, .. } => *actor_offset,
         }
     }
 
     pub fn descriptions(&self) -> &[String] {
         match self {
             Self::SourceDefault {
+                descript_records, ..
+            }
+            | Self::Travel {
                 descript_records, ..
             } => descript_records,
             Self::BridgeConsole { .. } => &[],
@@ -118,14 +135,29 @@ impl StaticTextContext {
             }
             | Self::BridgeConsole {
                 history_concepts, ..
+            }
+            | Self::Travel {
+                history_concepts, ..
             } => history_concepts,
         }
     }
 
     pub fn console_choice(&self) -> Option<StaticConsoleChoice> {
         match self {
-            Self::SourceDefault { .. } => None,
+            Self::SourceDefault { .. } | Self::Travel { .. } => None,
             Self::BridgeConsole { choice, .. } => Some(*choice),
+        }
+    }
+
+    /// Planet and destination of an on-planet line.
+    pub fn travel(&self) -> Option<(&str, &str)> {
+        match self {
+            Self::Travel {
+                planet,
+                destination,
+                ..
+            } => Some((planet, destination)),
+            _ => None,
         }
     }
 }
@@ -609,5 +641,29 @@ mod tests {
             {"offset":1,"before":1,"after":3}, {"offset":2,"before":2,"after":4}])
         );
         assert!(state_delta(&[0], &[0, 1]).is_err());
+    }
+
+    #[test]
+    fn travel_context_names_its_place_and_presents_without_a_console_choice() {
+        let travel: StaticTextContext = serde_json::from_value(serde_json::json!({
+            "kind": "travel", "actor_offset": 1370, "planet": "Corpo",
+            "destination": "Corpo", "descript_records": ["Izwalito"],
+        }))
+        .unwrap();
+        assert_eq!(travel.travel(), Some(("Corpo", "Corpo")));
+        assert_eq!(travel.actor_offset(), 1370);
+        assert_eq!(travel.descriptions(), ["Izwalito".to_owned()]);
+        assert!(travel.console_choice().is_none());
+        let contact: StaticTextContext = serde_json::from_value(serde_json::json!({
+            "kind": "source_default", "actor_offset": 1, "descript_records": ["Izwalito"],
+        }))
+        .unwrap();
+        assert!(contact.travel().is_none());
+        assert!(
+            serde_json::from_value::<StaticTextContext>(serde_json::json!({
+                "kind": "travel", "actor_offset": 1, "planet": "Corpo",
+            }))
+            .is_err()
+        );
     }
 }

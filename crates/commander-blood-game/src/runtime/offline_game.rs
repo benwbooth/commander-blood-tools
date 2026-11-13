@@ -1009,6 +1009,17 @@ pub(super) fn capture_dialogue_chapter(
 }
 
 /// Isolated A6 presentation. The scene and clocks run; story dispatch remains frozen.
+/// Hyperspace presentation line (camera_approach HYPERSPACE_ACTIVE_LINE).
+const HYPERSPACE_CLIP_LINE: u16 = 6;
+/// Script-requested sequence line (A8).
+const SCRIPT_SEQUENCE_CLIP_LINE: u16 = 7;
+/// Sequence request bit raised by A8 (load_sequence_request).
+const SEQUENCE_REQUEST_FLAG: u8 = 2;
+/// Black-hole travel line between its camera and relation phases (TravelReady).
+const TRAVEL_READY_CLIP_LINE: u16 = 44;
+/// Ship-navigation status line that presents a place's arrival film.
+const ARRIVAL_CLIP_LINE: u16 = 3;
+
 pub(super) fn capture_static_text(
     services: ModernGameServices<'_>,
     plan: &super::offline_static::OfflineStaticTextPlan,
@@ -1195,6 +1206,21 @@ pub(super) fn capture_static_text(
                 host.services_mut().load_radio_sound_bank()?;
                 prepared_bank = serde_json::json!("radio bank prepared: CB HONK loads no bank, so the resident bank depends on earlier play");
             }
+        } else if let Some((planet, destination)) = plan.context.travel() {
+            let directory = host
+                .services()
+                .runtime()
+                .current_profile()
+                .unwrap()
+                .directory();
+            let planet = directory
+                .find_active_object(planet.as_bytes())
+                .with_context(|| format!("travel planet is not a named native object: {planet}"))?;
+            let destination = directory
+                .find_active_object(destination.as_bytes())
+                .with_context(|| format!("travel destination is not a named native object: {destination}"))?;
+            host.services_mut()
+                .begin_chapter_travel(planet, destination, &mut lifecycle)?;
         } else {
             host.services_mut().request_scene_transition(bound.actor)?;
         }
@@ -1216,7 +1242,61 @@ pub(super) fn capture_static_text(
             }
             ensure!(seeked, "bridge console seek did not finish");
         }
-        let mut scene_ready = console_choice.is_some();
+        let travel = plan.context.travel().is_some();
+        if travel {
+            // The place arrives through the ship-navigation presentation (line 3): its
+            // film plays to its last frame, which stays as the scene background. Wait
+            // for that film to finish (or for a place without one to settle).
+            let (mut seen_video, mut idle) = (false, 0u32);
+            let mut arrived = false;
+            // Clip line 3 is the place's own arrival film: capture the arrival itself.
+            let arrival_clip = plan.clip_line == Some(ARRIVAL_CLIP_LINE);
+            if arrival_clip {
+                host.platform_mut().begin_capture();
+            }
+            let mut arrival_frames = 0u64;
+            let mut arrival_resource = serde_json::Value::Null;
+            for _ in 0..max_frames {
+                ensure!(
+                    run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
+                    "native lifecycle exited during static travel"
+                );
+                let snapshot = host.services().semantic_trace_snapshot(&lifecycle)?;
+                let active = !snapshot["video"]["active_resource"].is_null();
+                if active {
+                    arrival_resource = snapshot["video"]["active_resource"].clone();
+                    arrival_frames = arrival_frames
+                        .max(snapshot["video"]["decoded_frame_count"].as_u64().unwrap_or(0));
+                }
+                seen_video |= active;
+                idle = if active || lifecycle.navigation_rebuild_pending { 0 } else { idle + 1 };
+                if (seen_video && idle >= 2) || idle >= 90 {
+                    arrived = true;
+                    break;
+                }
+            }
+            ensure!(arrived, "static travel did not finish arriving");
+            if arrival_clip {
+                ensure!(seen_video, "the place presented no arrival film");
+                let driver = host.platform();
+                return Ok((
+                    serde_json::json!({
+                        "plan": plan, "authored": bound.authored,
+                        "completion": "isolated_clip_played", "story_execution": "frozen",
+                        "gameplay_reachability": "not_assessed", "natural_chapter_close": false,
+                        "clip": {"line": ARRIVAL_CLIP_LINE, "expected_frames": plan.clip_frames,
+                            "decoded_frames": arrival_frames, "resource": arrival_resource},
+                        "presented_frames": driver.captured_waits,
+                        "duration_ns": driver.elapsed_ns - driver.capture_origin_ns,
+                        "audio_samples": driver.sample_cursor - driver.capture_origin_sample,
+                        "bootstrap_duration_ns": driver.capture_origin_ns,
+                        "total_timer_ticks": driver.timer_ticks,
+                    }),
+                    host.services().read_offline_rgba()?,
+                ));
+            }
+        }
+        let mut scene_ready = console_choice.is_some() || travel;
         for _ in 0..if scene_ready { 0 } else { max_frames } {
             ensure!(
                 run_game_runtime_frame(&mut lifecycle, &mut host, &mut session)?.is_none(),
@@ -1236,7 +1316,7 @@ pub(super) fn capture_static_text(
             "static contact scene did not reach its deferred-actor boundary"
         );
         let before_preparation = host.services().semantic_trace_snapshot(&lifecycle)?;
-        if console_choice.is_none() {
+        if console_choice.is_none() && !travel {
             // The actor presentation that would clear the deferred-actor hold never
             // runs here, and the held scene's video queue is not serviced until it is
             // released; without this the character clip stays on its first frame.
@@ -1285,19 +1365,41 @@ pub(super) fn capture_static_text(
                 host.services_mut().set_ship_navigation_scene_vertical_offset(offset);
             }
             if let Some(basename) = &plan.clip_sequence {
-                host.services_mut().select_script_sequence_clip(basename.as_bytes())?;
+                if line == HYPERSPACE_CLIP_LINE {
+                    // Line 6 names the current hyperspace film (select_hyperspace_video).
+                    host.services_mut().select_hyperspace_video(basename.as_bytes())?;
+                } else {
+                    host.services_mut().select_script_sequence_clip(basename.as_bytes())?;
+                }
             }
-            // The main loop maps the signed text selector to the shared presentation line
-            // (presentation_line_for_text_selector) once a text menu is
-            // pending, which is how an A6 line selects its talk clip.
-            lifecycle.presentation.text_selector = Some(
-                i8::try_from(i32::from(line) - i32::from(crate::native::bloodprg::presentation_line_for_text_selector(0)))
-                    .context("clip line is outside the selector range")?,
-            );
-            lifecycle.presentation.text_menu_pending = true;
-            lifecycle.presentation.request_flags = crate::native::bloodprg::PresentationRequestFlags::decode(
-                lifecycle.presentation.request_flags.bits() | 1, // TEXT_REQUEST_PENDING
-            );
+            let selector = i32::from(line)
+                - i32::from(crate::native::bloodprg::presentation_line_for_text_selector(0));
+            if selector < -1 || line == TRAVEL_READY_CLIP_LINE {
+                // Lines below the text range (A8's line 7, the ship cycle 4..6) and
+                // TravelReady 44 are not text selections: their writers store the shared
+                // active line, which the script system publishes to both the ship
+                // presentation and the lifecycle scheduler
+                // (publish_script_active_line_to_ship / _to_lifecycle). A8 also raises
+                // the sequence request (load_sequence_request, request bit 2).
+                host.services_mut().ship_presentation_state_mut().active_line = line;
+                lifecycle.presentation.active_line = Some(line);
+                if line == SCRIPT_SEQUENCE_CLIP_LINE {
+                    lifecycle.presentation.request_flags = crate::native::bloodprg::PresentationRequestFlags::decode(
+                        lifecycle.presentation.request_flags.bits() | SEQUENCE_REQUEST_FLAG,
+                    );
+                }
+            } else {
+                // The main loop maps the signed text selector to the shared presentation
+                // line (presentation_line_for_text_selector) once a text menu is pending,
+                // which is how an A6 line selects its talk clip.
+                lifecycle.presentation.text_selector = Some(
+                    i8::try_from(selector).context("clip line is outside the selector range")?,
+                );
+                lifecycle.presentation.text_menu_pending = true;
+                lifecycle.presentation.request_flags = crate::native::bloodprg::PresentationRequestFlags::decode(
+                    lifecycle.presentation.request_flags.bits() | 1, // TEXT_REQUEST_PENDING
+                );
+            }
             let before_clip = host.services().semantic_trace_snapshot(&lifecycle)?;
             host.platform_mut().begin_capture();
             let (mut decoded, mut stalled, mut resource) = (0u64, 0u32, serde_json::Value::Null);

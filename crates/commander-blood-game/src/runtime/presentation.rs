@@ -167,6 +167,7 @@ impl<'window> RuntimePresentationHost<'window> {
 
     /// Present indexed artwork without a 3D base scene.
     pub fn present_artwork(&mut self, manu3_triangles: &[RenderTriangle]) -> Result<()> {
+        let manu3_triangles = if self.shows_pointer() { manu3_triangles } else { &[] };
         self.renderer_mut()?.clear_ui_overlay();
         self.renderer_mut()?
             .render(manu3_triangles, None, None)
@@ -207,7 +208,8 @@ impl<'window> RuntimePresentationHost<'window> {
             .manu3()
             .map(|model| model.render_triangles())
             .unwrap_or(&[]);
-        let manu3_triangles = select_manu3_triangles(all_manu3_triangles, manu3_visible);
+        let manu3_triangles =
+            select_manu3_triangles(all_manu3_triangles, manu3_visible && self.shows_pointer());
         let renderer = self.renderer_mut()?;
         renderer
             .update_bridge_palette(bridge_palette)
@@ -251,6 +253,14 @@ impl<'window> RuntimePresentationHost<'window> {
         self.renderer
             .as_mut()
             .is_some_and(Renderer::remove_alien_scene)
+    }
+
+    /// Whether the MANU3 hand (the game's pointer) is composited.
+    ///
+    /// Offscreen targets exist only for offline video exports, which have no user
+    /// and must show the scene without the pointer; window targets always draw it.
+    const fn shows_pointer(&self) -> bool {
+        matches!(self.target, PresentationTarget::Window(_))
     }
 
     /// Number of frames submitted to the presentation target.
