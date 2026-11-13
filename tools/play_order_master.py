@@ -73,6 +73,21 @@ def cut(start_ns, end_ns, target, master):
     return target
 
 
+def trim_first_frame(source, target):
+    """Drop a site render's first frame: the capture's frame 0 is the scene before the
+    line is applied (no subtitle frame, often the previous actor), shown in no game."""
+    if target.exists():
+        return target
+    temporary = target.with_suffix(".tmp.mkv")
+    subprocess.run(
+        ["ffmpeg", "-v", "error", "-y", "-i", str(source), "-vf", "trim=start_frame=1,setpts=PTS-STARTPTS",
+         "-af", "atrim=start=0.068,asetpts=PTS-STARTPTS", "-fps_mode", "passthrough",
+         "-c:v", "libvpx-vp9", "-lossless", "1", "-profile:v", "1", "-pix_fmt", "gbrp", "-row-mt", "1",
+         "-cpu-used", "4", "-c:a", "pcm_f32le", str(temporary)], check=True)
+    temporary.rename(target)
+    return target
+
+
 def silent_names(path):
     data = read_json(path)
     return {v["name"] for v in data["videos"]} if isinstance(data, dict) else set(data)
@@ -105,7 +120,8 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
     cuts = out / "cuts"
     cuts.mkdir(exist_ok=True)
 
-    plan, covered, missing_sites, cut_jobs = [], set(), [], []
+    plan, covered, missing_sites, cut_jobs, trim_jobs = [], set(), [], [], []
+    (out / "sites").mkdir(parents=True, exist_ok=True)
     fixed = {}
     if play_plan is not None:
         # The opening reel and the credits are executable films with fixed places, even
@@ -125,8 +141,10 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
                 continue
             actor, text = texts.get(ident, ("", ""))
             profile = ident.split(".")[1].upper()
-            plan.append(dict(kind="site", id=ident, path=str(Path(detail["path"]) / "master.mkv"),
-                             duration_ns=detail["duration_ns"], title=f"{profile} {actor}: {text[:70]}"))
+            trimmed = out / "sites" / f"{ident}.mkv"
+            trim_jobs.append((Path(detail["path"]) / "master.mkv", trimmed))
+            plan.append(dict(kind="site", id=ident, path=str(trimmed), duration_ns=None,
+                             title=f"{profile} {actor}: {text[:70]}"))
         elif kind == "sequence_record":
             capture = sequence_dir / ident / "master.mkv" if sequence_dir else None
             if capture and capture.exists() and ident not in covered:
@@ -213,12 +231,13 @@ def build(order_path, ledgers, hnm_dir, sequence_dir, inventory_path, out, jobs,
 
     with ThreadPoolExecutor(jobs) as pool:
         list(pool.map(lambda job: cut(*job), cut_jobs))
+        list(pool.map(lambda job: trim_first_frame(*job), trim_jobs))
 
     meta, start = [";FFMETADATA1"], 0
     for item in plan:
         # The concat demuxer advances by each file's container duration; a lossless cut
         # can run a frame past its chapter, so cut parts are measured, not assumed.
-        if item["kind"] in ("video", "engine_video") or not item["duration_ns"]:
+        if item["kind"] != "sequence_record" or not item["duration_ns"]:
             item["duration_ns"] = round(probe_duration(Path(item["path"])) * 1e9)
         length = item["duration_ns"]
         item["duration_ns"] = length
